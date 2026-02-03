@@ -1,4 +1,4 @@
-const CACHE_NAME = "rv-fit-v6"; // Subí la versión para forzar actualización
+const CACHE_NAME = "rv-fit-v7"; // Subí la versión para forzar actualización
 
 const FILES_TO_CACHE = [
   "./",
