@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Entrenamientos RV.</title>
+<title> RV fit v2 </title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2563eb">
@@ -71,7 +71,7 @@ body{
   justify-content:center;
   z-index:9999;
   opacity:1;
-  transition:opacity .25s ease;
+  transition:opacity .45s ease;
 
   /* Safe areas */
   padding-top: env(safe-area-inset-top);
@@ -439,7 +439,7 @@ button.active{
   const splash = document.getElementById('splash');
   if (!splash) return;
 
-  const MIN_MS = 500;
+  const MIN_MS = 1100;
   const start = Date.now();
 
   function hideSplash() {
@@ -867,55 +867,6 @@ function showUpdateToast(worker) {
     window.location.reload();
   });
 }
-</script>
-<script>
-(function () {
-  const isStandalone =
-    (window.navigator.standalone === true) ||
-    window.matchMedia?.('(display-mode: standalone)')?.matches;
-
-  if (!isStandalone) {
-    const b = document.createElement('div');
-    b.style.position = 'fixed';
-    b.style.top = '10px';
-    b.style.left = '50%';
-    b.style.transform = 'translateX(-50%)';
-    b.style.background = 'rgba(0,0,0,.85)';
-    b.style.color = 'white';
-    b.style.padding = '8px 12px';
-    b.style.borderRadius = '14px';
-    b.style.fontSize = '12px';
-    b.style.zIndex = '999999';
-    b.textContent = 'Estás abriendo en Safari. Para modo App: Compartir → Agregar a pantalla de inicio → abrir desde el ícono.';
-    document.body.appendChild(b);
-  }
-})();
-</script>
-<script>
-(function(){
-  const isStandalone =
-    (window.navigator.standalone === true) ||
-    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-
-  const box = document.createElement('div');
-  box.style.position='fixed';
-  box.style.top='10px';
-  box.style.left='50%';
-  box.style.transform='translateX(-50%)';
-  box.style.zIndex='999999';
-  box.style.background='rgba(0,0,0,.85)';
-  box.style.color='#fff';
-  box.style.padding='10px 12px';
-  box.style.borderRadius='14px';
-  box.style.fontSize='12px';
-  box.style.maxWidth='92vw';
-  box.style.lineHeight='1.25';
-  box.innerHTML = `
-    <div><b>standalone:</b> ${isStandalone}</div>
-    <div><b>URL:</b> ${location.href}</div>
-  `;
-  document.body.appendChild(box);
-})();
 </script>
 
 </body>
