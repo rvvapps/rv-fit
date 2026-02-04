@@ -32,7 +32,7 @@
   --scheduled:#fde68a;
   --done:#22c55e;
   --border:#cbd5e1;
-  --bg:#f8fafc;
+  --bg:#f8fafc; /* Apple clean */
   --weekend:#e5e7eb;
 }
 
@@ -73,6 +73,7 @@ body{
   opacity:1;
   transition:opacity .45s ease;
 
+  /* Safe areas */
   padding-top: env(safe-area-inset-top);
   padding-right: env(safe-area-inset-right);
   padding-bottom: env(safe-area-inset-bottom);
@@ -166,7 +167,6 @@ button.active{
   background:white;
   user-select:none;
   -webkit-user-select:none;
-  touch-action: manipulation;
 }
 .day.weekend{background:var(--weekend);}
 .day.selected{border:2px solid var(--primary);}
@@ -181,6 +181,13 @@ button.active{
 .num{margin-top:6px;font-weight:700;}
 .time{font-size:.65rem;}
 .empty{visibility:hidden;}
+
+.programmer{
+  display:flex;
+  gap:6px;
+  justify-content:center;
+  margin:.5rem 0;
+}
 
 /* QUICK PROGRAM */
 .quick-toggle{display:flex;justify-content:center;margin:.4rem 0;}
@@ -242,7 +249,7 @@ button.active{
   justify-content:center;
   align-items:center;
   gap:10px;
-  margin:.2rem 0 0;
+  margin:.6rem 0;
   font-size:.75rem;
 }
 .clean-bar button{font-size:.7rem;}
@@ -312,6 +319,75 @@ button.active{
 .annual-done{background:var(--done);}
 .annual-sched{background:var(--scheduled);}
 
+
+/* ACTIONS ROW (Programación / Respaldo) */
+.actions-row{
+  display:flex;
+  gap:10px;
+  margin:.55rem 0 .25rem;
+}
+.action-btn{
+  flex:1;
+  padding:.55rem .6rem;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:white;
+  font-size:.78rem;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.action-btn.active{
+  background:linear-gradient(135deg, rgba(37,99,235,.14), rgba(96,165,250,.18));
+  border-color:rgba(37,99,235,.35);
+  color:#0f172a;
+}
+.action-btn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+/* Badge punto rojo */
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#ef4444;
+  display:none;
+  box-shadow:0 0 0 3px rgba(239,68,68,.12);
+}
+
+/* Panels desplegables */
+.panel{
+  display:none;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:.6rem;
+  margin:.25rem 0 .6rem;
+}
+.panel.show{ display:block; }
+
+.backup-status{
+  font-size:.74rem;
+  font-weight:800;
+  color:#334155;
+  text-align:center;
+  margin-bottom:.55rem;
+}
+.backup-status.warn{ color:#b45309; }
+.backup-status.crit{ color:#b91c1c; }
+
+.backup-actions{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+}
+.backup-actions button{
+  flex:1;
+}
+
 /* Toast */
 .toast{
   position:fixed;
@@ -328,45 +404,15 @@ button.active{
 }
 .toast.show{opacity:1;}
 
-/* ====== PROGRAMACIÓN (desplegable) ====== */
-.program-group{
-  margin-top:.65rem;
-  border:1px solid var(--border);
-  border-radius:14px;
-  overflow:hidden;
-}
-.program-header{
-  padding:.6rem;
-  font-weight:900;
-  background:linear-gradient(135deg, rgba(37,99,235,.08), rgba(96,165,250,.12));
-  border-bottom:1px solid rgba(203,213,225,.8);
-  cursor:pointer;
-  text-align:center;
-  color:#0f172a;
-  user-select:none;
-  -webkit-user-select:none;
-}
-.program-content{
-  display:none;
-  padding:.6rem;
-  flex-direction:column;
-  gap:.6rem;
-}
-.program-content.show{
-  display:flex;
-}
-.program-line{
-  display:flex;
-  gap:6px;
-  justify-content:center;
-  flex-wrap:wrap;
-}
+.day { touch-action: manipulation; }
+
+
 </style>
 </head>
 
 <body>
 
-<!-- Splash overlay (web) -->
+<!-- Splash overlay (web). Se oculta rápido al cargar -->
 <div id="splash" aria-hidden="true">
   <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
     <img src="./apple-touch-icon.png" alt="RV FIT">
@@ -376,105 +422,117 @@ button.active{
 
 <div class="container">
 
-  <h1>Entrenamientos</h1>
+<h1>Entrenamientos</h1>
 
-  <div class="nav">
-    <button onclick="prevMonth()">◀</button>
-    <strong id="label"></strong>
-    <button onclick="nextMonth()">▶</button>
+<div class="nav">
+  <button onclick="prevMonth()">◀</button>
+  <strong id="label"></strong>
+  <button onclick="nextMonth()">▶</button>
+</div>
+
+<div class="center" id="monthNowWrap" style="display:none">
+  <button onclick="goToCurrentMonth()">📍 Mes actual</button>
+</div>
+
+<div class="calendar" id="calendar"></div>
+
+<!-- Semana actual (solo mes actual) -->
+<div class="weekbar" id="weekBar" style="display:none">
+  <div class="weekbar-head">
+    <div class="weekbar-title">Semana actual</div>
+    <div class="weekbar-meta" id="weekMeta">0/0</div>
+  </div>
+  <div class="bar"><div class="fill" id="weekFill"></div></div>
+</div>
+
+<!-- Resumen anual -->
+<div class="center">
+  <button onclick="toggleAnnual()">📊 Resumen anual</button>
+</div>
+<div class="annual" id="annual"></div>
+
+<!-- Acciones (Programación / Respaldo) -->
+<div class="actions-row" id="actionsRow">
+  <button class="action-btn" id="btnProgram" onclick="togglePanel('program')">⚙️ Programación</button>
+  <button class="action-btn" id="btnBackup" onclick="togglePanel('backup')">
+    💾 Respaldo <span class="dot" id="backupDot" aria-hidden="true"></span>
+  </button>
+</div>
+
+<!-- Panel Programación (mes actual y futuros) -->
+<div class="panel" id="programPanel" aria-hidden="true">
+  <div class="programmer" id="programmer">
+    <button onclick="setTime('06:30')">06:30</button>
+    <button onclick="setTime('07:00')">07:00</button>
+    <button onclick="setTime('07:30')">07:30</button>
+    <button onclick="setTime('--:--')">--:--</button>
   </div>
 
-  <div class="center" id="monthNowWrap" style="display:none">
-    <button onclick="goToCurrentMonth()">📍 Mes actual</button>
+  <div class="quick-toggle" id="quickToggle">
+    <button onclick="toggleQuick()">⚡ Programación rápida</button>
   </div>
 
-  <div class="calendar" id="calendar"></div>
-
-  <!-- ✅ Semana actual justo debajo del calendario (solo mes actual) -->
-  <div class="weekbar" id="weekBar" style="display:none">
-    <div class="weekbar-head">
-      <div class="weekbar-title">Semana actual</div>
-      <div class="weekbar-meta" id="weekMeta">0/0</div>
+  <div class="quick-panel" id="quickPanel">
+    <div class="quick-row">
+      <strong>Día</strong>
+      <button onclick="toggleQuickDay(1)">L</button>
+      <button onclick="toggleQuickDay(2)">M</button>
+      <button onclick="toggleQuickDay(3)">W</button>
+      <button onclick="toggleQuickDay(4)">J</button>
+      <button onclick="toggleQuickDay(5)">V</button>
+      <button onclick="toggleQuickDay(6)">S</button>
+      <button onclick="toggleQuickDay(0)">D</button>
     </div>
-    <div class="bar"><div class="fill" id="weekFill"></div></div>
-  </div>
-
-  <!-- ✅ Resumen anual justo debajo de la semana actual -->
-  <div class="center">
-    <button onclick="toggleAnnual()">📊 Resumen anual</button>
-  </div>
-  <div class="annual" id="annual"></div>
-
-  <!-- ✅ Programación (desplegable) — visible desde mes actual en adelante -->
-  <div class="program-group" id="programGroup" style="display:none">
-    <div class="program-header" onclick="toggleProgramGroup()">⚙️ Programación</div>
-
-    <div class="program-content" id="programContent">
-      <!-- 1) Horarios -->
-      <div class="program-line" id="programmer">
-        <button onclick="setTime('06:30')">06:30</button>
-        <button onclick="setTime('07:00')">07:00</button>
-        <button onclick="setTime('07:30')">07:30</button>
-        <button onclick="setTime('--:--')">--:--</button>
-      </div>
-
-      <!-- 2) Programación rápida -->
-      <div class="quick-toggle" id="quickToggle">
-        <button onclick="toggleQuick()">⚡ Programación rápida</button>
-      </div>
-
-      <div class="quick-panel" id="quickPanel">
-        <div class="quick-row">
-          <strong>Día</strong>
-          <button onclick="toggleQuickDay(1)">L</button>
-          <button onclick="toggleQuickDay(2)">M</button>
-          <button onclick="toggleQuickDay(3)">W</button>
-          <button onclick="toggleQuickDay(4)">J</button>
-          <button onclick="toggleQuickDay(5)">V</button>
-          <button onclick="toggleQuickDay(6)">S</button>
-          <button onclick="toggleQuickDay(0)">D</button>
-        </div>
-        <div class="quick-row">
-          <strong>Hora</strong>
-          <button onclick="setQuickTime('06:30')">06:30</button>
-          <button onclick="setQuickTime('07:00')">07:00</button>
-          <button onclick="setQuickTime('07:30')">07:30</button>
-          <button onclick="setQuickTime('--:--')">--:--</button>
-        </div>
-        <div class="center">
-          <button onclick="applyQuick()">Programar</button>
-        </div>
-      </div>
-
-      <!-- 3) Limpieza (solo mes actual) -->
-      <div class="clean-bar" id="cleanBar" style="display:none">
-        <button id="cw" onclick="selectClean('week')">🧹 Semana</button>
-        <button id="cm" onclick="selectClean('month')">🗑 Mes</button>
-        <button id="ca" onclick="selectClean('all')">🔥 Todo</button>
-        <span onclick="executeClean()">Borrar</span>
-      </div>
+    <div class="quick-row">
+      <strong>Hora</strong>
+      <button onclick="setQuickTime('06:30')">06:30</button>
+      <button onclick="setQuickTime('07:00')">07:00</button>
+      <button onclick="setQuickTime('07:30')">07:30</button>
+      <button onclick="setQuickTime('--:--')">--:--</button>
+    </div>
+    <div class="center">
+      <button onclick="applyQuick()">Programar</button>
     </div>
   </div>
 
-  <!-- Histórico (solo meses pasados) -->
-  <div class="history" id="historyPanel" style="display:none">
-    <div class="history-inner">
-      <div class="hlabel">Programados</div>
-      <div class="hlabel">Reales</div>
-      <button onclick="saveHistory()">Guardar</button>
+  <!-- Limpieza (solo mes actual) -->
+  <div class="clean-bar" id="cleanBar" style="display:none">
+    <button id="cw" onclick="selectClean('week')">🧹 Semana</button>
+    <button id="cm" onclick="selectClean('month')">🗑 Mes</button>
+    <button id="ca" onclick="selectClean('all')">🔥 Todo</button>
+    <span onclick="executeClean()">Borrar</span>
+  </div>
+</div>
 
-      <input id="hPlan" type="number" inputmode="numeric">
-      <input id="hDone" type="number" inputmode="numeric">
-      <div></div>
-    </div>
+<!-- Panel Respaldo (siempre disponible) -->
+<div class="panel" id="backupPanel" aria-hidden="true">
+  <div class="backup-status" id="backupStatus">—</div>
+
+  <div class="backup-actions">
+    <button onclick="exportBackup()">Exportar respaldo</button>
+    <button onclick="triggerImport()">Importar respaldo</button>
   </div>
 
-</div><!-- /container -->
+  <input type="file" id="backupFile" accept="application/json" style="display:none" />
+</div>
+
+<!-- Histórico (solo meses pasados) -->
+<div class="history" id="historyPanel" style="display:none">
+  <div class="history-inner">
+    <div class="hlabel">Programados</div>
+    <div class="hlabel">Reales</div>
+    <button onclick="saveHistory()">Guardar</button>
+
+    <input id="hPlan" type="number" inputmode="numeric">
+    <input id="hDone" type="number" inputmode="numeric">
+    <div></div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-/* Splash overlay: ocultar suave */
+/* Splash overlay: ocultar suave sin parpadeo + sin flash */
 (function () {
   const splash = document.getElementById('splash');
   if (!splash) return;
@@ -505,7 +563,7 @@ button.active{
 </script>
 
 <script>
-/* Entrenamientos RV */
+/* Entrenamientos RV - V1 + mejoras solicitadas */
 const STORAGE="rv-data", HST="rv-history";
 let data=JSON.parse(localStorage.getItem(STORAGE)||"{}");
 let history=JSON.parse(localStorage.getItem(HST)||"{}");
@@ -513,6 +571,12 @@ let history=JSON.parse(localStorage.getItem(HST)||"{}");
 let current=new Date(), selected=null;
 let quickDays=new Set(), quickTime=null;
 let cleanMode=null;
+
+// panels
+let activePanel=null;
+
+// backup meta
+const BACKUP_META_KEY = "rv-backup-meta";
 
 // long tap state
 let pressTimer=null;
@@ -522,18 +586,28 @@ const LONG_PRESS_MS=600;
 const cal=document.getElementById("calendar");
 const label=document.getElementById("label");
 const toast=document.getElementById("toast");
+
 const quickPanel=document.getElementById("quickPanel");
 const historyPanel=document.getElementById("historyPanel");
-const quickToggle=document.getElementById("quickToggle");
-const programmer=document.getElementById("programmer");
-const cleanBar=document.getElementById("cleanBar");
 const annual=document.getElementById("annual");
 const monthNowWrap=document.getElementById("monthNowWrap");
 const weekBar=document.getElementById("weekBar");
 const weekMeta=document.getElementById("weekMeta");
 const weekFill=document.getElementById("weekFill");
-const programGroup=document.getElementById("programGroup");
-const programContent=document.getElementById("programContent");
+
+const actionsRow=document.getElementById("actionsRow");
+const btnProgram=document.getElementById("btnProgram");
+const btnBackup=document.getElementById("btnBackup");
+const backupDot=document.getElementById("backupDot");
+
+const programPanel=document.getElementById("programPanel");
+const backupPanel=document.getElementById("backupPanel");
+const backupStatus=document.getElementById("backupStatus");
+const backupFile=document.getElementById("backupFile");
+
+const quickToggle=document.getElementById("quickToggle");
+const programmer=document.getElementById("programmer");
+const cleanBar=document.getElementById("cleanBar");
 
 const dayNames=["L","M","M","J","V","S","D"];
 const monthNames=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -549,6 +623,152 @@ function showToast(t){
   setTimeout(()=>toast.classList.remove("show"),1500);
 }
 
+function closePanels(){
+  activePanel=null;
+  programPanel.classList.remove("show");
+  backupPanel.classList.remove("show");
+  btnProgram.classList.remove("active");
+  btnBackup.classList.remove("active");
+  programPanel.setAttribute("aria-hidden","true");
+  backupPanel.setAttribute("aria-hidden","true");
+}
+
+function togglePanel(which){
+  // Programación no disponible en meses pasados
+  if(which==="program" && isPastMonth()){
+    return;
+  }
+  if(activePanel===which){
+    closePanels();
+    return;
+  }
+  closePanels();
+  activePanel=which;
+  if(which==="program"){
+    programPanel.classList.add("show");
+    btnProgram.classList.add("active");
+    programPanel.setAttribute("aria-hidden","false");
+    // al abrir programación, aseguramos visibilidad de limpieza según mes
+    cleanBar.style.display = isCurrentMonthView() ? "flex" : "none";
+  }else{
+    backupPanel.classList.add("show");
+    btnBackup.classList.add("active");
+    backupPanel.setAttribute("aria-hidden","false");
+    updateBackupUI();
+  }
+}
+
+function getBackupMeta(){
+  try{
+    return JSON.parse(localStorage.getItem(BACKUP_META_KEY) || "{}");
+  }catch(e){
+    return {};
+  }
+}
+
+function setBackupMeta(meta){
+  localStorage.setItem(BACKUP_META_KEY, JSON.stringify(meta||{}));
+}
+
+function daysSince(iso){
+  if(!iso) return null;
+  const t = new Date(iso);
+  if(isNaN(t.getTime())) return null;
+  const now = new Date();
+  const diff = now.getTime() - t.getTime();
+  return Math.floor(diff / (1000*60*60*24));
+}
+
+function updateBackupUI(){
+  const meta = getBackupMeta();
+  const d = daysSince(meta.lastBackup);
+  let level = "ok";
+  let msg = "—";
+
+  backupStatus.classList.remove("warn","crit");
+
+  if(d===null){
+    level = "never";
+    msg = "⚠️ Aún no has hecho ningún respaldo";
+  }else if(d >= 60){
+    level = "crit";
+    msg = `🔴 Último respaldo hace ${d} días`;
+    backupStatus.classList.add("crit");
+  }else if(d >= 30){
+    level = "warn";
+    msg = `⚠️ No has hecho respaldo en ${d} días`;
+    backupStatus.classList.add("warn");
+  }else{
+    msg = `Último respaldo: hace ${d} día${d===1?"":"s"}`;
+  }
+
+  backupStatus.textContent = msg;
+
+  // Badge rojo en botón (desde 30 días o nunca)
+  const showDot = (level==="never" || level==="warn" || level==="crit");
+  backupDot.style.display = showDot ? "inline-block" : "none";
+}
+
+function exportBackup(){
+  const payload = {
+    version: "2.0",
+    app: "RV FIT",
+    exportedAt: new Date().toISOString(),
+    data: data,
+    history: history
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "rv-fit-backup.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+
+  setBackupMeta({ lastBackup: new Date().toISOString() });
+  updateBackupUI();
+  showToast("Respaldo generado. Guarda o reemplaza en Archivos.");
+}
+
+function triggerImport(){
+  backupFile.value = "";
+  backupFile.click();
+}
+
+backupFile.addEventListener("change", async () => {
+  const file = backupFile.files && backupFile.files[0];
+  if(!file) return;
+
+  try{
+    const text = await file.text();
+    const obj = JSON.parse(text);
+
+    if(!obj || typeof obj !== "object" || !obj.data || !obj.history){
+      showToast("Archivo inválido");
+      return;
+    }
+
+    const ok = confirm("¿Reemplazar datos actuales con este respaldo?");
+    if(!ok) return;
+
+    data = obj.data || {};
+    history = obj.history || {};
+    save();
+    showToast("Respaldo restaurado");
+    closePanels();
+    render();
+  }catch(e){
+    console.error(e);
+    showToast("Error al importar");
+  }
+});
+
+
 function isPastMonth(){
   const n=new Date();
   return current.getFullYear()<n.getFullYear() ||
@@ -558,9 +778,6 @@ function isCurrentMonthView(){
   const n=new Date();
   return current.getFullYear()===n.getFullYear() && current.getMonth()===n.getMonth();
 }
-function isFutureOrCurrentMonth(){
-  return !isPastMonth();
-}
 
 function keyToDate(key){
   const [yy,mm,dd]=key.split("-").map(Number);
@@ -568,10 +785,8 @@ function keyToDate(key){
   dt.setHours(0,0,0,0);
   return dt;
 }
-
-/* ===== Programación desplegable ===== */
-function toggleProgramGroup(){
-  programContent.classList.toggle("show");
+function dateToKey(dt){
+  return `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
 }
 
 /* ========== RENDER ========== */
@@ -585,26 +800,27 @@ function render(){
   const past=isPastMonth();
   const isCurrent=isCurrentMonthView();
 
-  // UI visibility rules
+  // visibility rules
   cal.classList.toggle("past",past);
 
-  // Semana actual: solo mes actual
-  weekBar.style.display = (!past && isCurrent) ? "block" : "none";
-
-  // Histórico: solo meses pasados
-  historyPanel.style.display = past ? "flex" : "none";
-
-  // Botón "Mes actual"
-  monthNowWrap.style.display = isCurrent ? "none" : "flex";
-
-  // Programación: mes actual y futuros (no pasado)
-  programGroup.style.display = past ? "none" : "block";
+  // Programación: solo mes actual y futuros (en pasado se deshabilita)
+  btnProgram.disabled = past;
+  if(past && activePanel==="program") closePanels();
 
   // Limpieza: solo mes actual
   cleanBar.style.display = (!past && isCurrent) ? "flex" : "none";
 
-  // cerrar panel rápido al cambiar mes
-  quickPanel.classList.remove("show");
+  // Histórico: solo meses pasados
+  historyPanel.style.display = past ? "flex" : "none";
+
+  // Semana actual: solo mes actual
+  weekBar.style.display = (!past && isCurrent) ? "block" : "none";
+
+  // Botón mes actual
+  monthNowWrap.style.display = isCurrent ? "none" : "flex";
+
+  // Badge + texto de respaldo
+  updateBackupUI();
 
   // fill history inputs if present
   if(past){
@@ -633,7 +849,7 @@ function render(){
 
     cell.innerHTML=`<div class="num">${d}</div><div class="time">${data[key]?.time||""}</div>`;
 
-    // click (desktop): toggle done if scheduled and date <= today and not past month view
+    // click: select, and toggle done only if scheduled and date <= today and not past month view
     cell.addEventListener("click", ()=>{
       selected=key;
       if(!past && data[key] && date<=today){
@@ -643,57 +859,70 @@ function render(){
       render();
     });
 
-    // long press delete (iOS compatible)
-    let longPressTriggered = false;
+// long press delete (iOS compatible)
+let longPressTriggered = false;
 
-    const startPress = (ev) => {
-      if (past) return;
+const startPress = (ev) => {
+  if (past) return;
 
-      longPressTriggered = false;
-      pressedKey = key;
-      clearTimeout(pressTimer);
+  longPressTriggered = false;
+  pressedKey = key;
+  clearTimeout(pressTimer);
 
-      pressTimer = setTimeout(() => {
-        longPressTriggered = true;
+  pressTimer = setTimeout(() => {
+    longPressTriggered = true;
 
-        if (pressedKey !== key) return;
+    if (pressedKey !== key) return;
 
-        if (data[key]) {
-          delete data[key];
-          save();
-          showToast("Día eliminado");
-          if (selected === key) selected = null;
-          render();
-        } else {
-          showToast("Nada que borrar");
-        }
-      }, LONG_PRESS_MS);
-    };
+    if (data[key]) {
+      delete data[key];
+      save();
+      showToast("Día eliminado");
+      if (selected === key) selected = null;
+      render();
+    } else {
+      showToast("Nada que borrar");
+    }
+  }, LONG_PRESS_MS);
 
-    const endPress = (ev) => {
-      clearTimeout(pressTimer);
-      pressedKey = null;
+  // 🔥 IMPORTANTE: NO usamos preventDefault aquí (rompe el tap en iOS)
+};
 
-      if (longPressTriggered) return;
+const endPress = (ev) => {
+  clearTimeout(pressTimer);
+  pressedKey = null;
 
-      // iOS: forzamos tap (a veces no dispara click)
-      if (ev && (ev.type === "touchend" || ev.type === "touchcancel")) {
-        selected = key;
+  // Si fue long press, no hacemos toggle
+  if (longPressTriggered) return;
 
-        if (!past && data[key] && date <= today) {
-          data[key].done = !data[key].done;
-          save();
-        }
-        render();
-      }
-    };
+  // En iOS a veces no dispara click, así que forzamos el tap
+  if (ev && (ev.type === "touchend" || ev.type === "touchcancel")) {
+    selected = key;
 
-    cell.addEventListener("touchstart", startPress, { passive: false });
-    cell.addEventListener("touchend", endPress);
-    cell.addEventListener("touchcancel", endPress);
-    cell.addEventListener("mousedown", startPress);
-    cell.addEventListener("mouseup", endPress);
-    cell.addEventListener("mouseleave", endPress);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const parts = key.split("-");
+    const date = new Date(parts[0], parts[1], parts[2]);
+    date.setHours(0,0,0,0);
+
+    if (!past && data[key] && date <= today) {
+      data[key].done = !data[key].done;
+      save();
+    }
+
+    render();
+  }
+};
+
+
+cell.addEventListener("touchstart", startPress, { passive: false });
+cell.addEventListener("touchend", endPress);
+cell.addEventListener("touchcancel", endPress);
+cell.addEventListener("mousedown", startPress);
+cell.addEventListener("mouseup", endPress);
+cell.addEventListener("mouseleave", endPress);
+
 
     cal.appendChild(cell);
   }
@@ -701,7 +930,7 @@ function render(){
   if(!past && isCurrent){
     renderWeekBar();
   }
-  renderAnnual();
+  renderAnnual(); // keep annual contents synced
 }
 
 /* ========== PROGRAMACIÓN MANUAL ========== */
@@ -723,6 +952,7 @@ function toggleQuickDay(d){
 function setQuickTime(t){
   if(isPastMonth()) return;
   quickTime=t;
+  // remove active only from Hora row buttons
   const row = event.target.closest(".quick-row");
   row.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
   event.target.classList.add("active");
@@ -738,7 +968,7 @@ function applyQuick(){
     if(dt.getMonth()!==m) continue;
     if(quickDays.has(dt.getDay())){
       const k=`${y}-${m}-${d}`;
-      if(!data[k]) data[k]={time:quickTime,done:false};
+      if(!data[k]) data[k]={time:quickTime,done:false}; // no pisa existentes
     }
   }
   save();
@@ -746,10 +976,10 @@ function applyQuick(){
   render();
 }
 
-/* ========== WEEK BAR ========== */
+/* ========== WEEK BAR (Semana actual: programados a la fecha vs reales) ========== */
 function startOfWeekMonday(dt){
   const d=new Date(dt); d.setHours(0,0,0,0);
-  const day=(d.getDay()+6)%7;
+  const day=(d.getDay()+6)%7; // Mon=0 ... Sun=6
   d.setDate(d.getDate()-day);
   return d;
 }
@@ -762,6 +992,7 @@ function renderWeekBar(){
   Object.keys(data).forEach(k=>{
     const dt=keyToDate(k);
     if(dt < ws || dt > we) return;
+    // "a la fecha": solo fechas que ya ocurrieron (<= hoy)
     if(dt > today) return;
     planned += 1;
     if(data[k].done) done += 1;
@@ -850,6 +1081,7 @@ function renderAnnual(){
   for(let m=0; m<12; m++){
     let plan=0, done=0;
 
+    // prefer historic override if present
     const hk=`${y}-${m}`;
     if(history[hk]){
       plan = Number(history[hk].plan || 0);
@@ -882,25 +1114,28 @@ function renderAnnual(){
 }
 
 /* ========== NAV ========== */
-function prevMonth(){ current.setMonth(current.getMonth()-1); selected=null; render(); }
-function nextMonth(){ current.setMonth(current.getMonth()+1); selected=null; render(); }
-function goToCurrentMonth(){ current=new Date(); selected=null; render(); }
+function prevMonth(){ current.setMonth(current.getMonth()-1); selected=null; closePanels(); render(); }
+function nextMonth(){ current.setMonth(current.getMonth()+1); selected=null; closePanels(); render(); }
+function goToCurrentMonth(){ current=new Date(); selected=null; closePanels(); render(); }
 
 /* init */
 render();
 </script>
-
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const reg = await navigator.serviceWorker.register('./sw.js', { scope: '/rv-fit/' });
+
+      // 🔥 Fuerza check de update (iOS/GitHub Pages)
       await reg.update();
 
+      // ✅ Si ya hay una versión nueva esperando, muestra toast
       if (reg.waiting && navigator.serviceWorker.controller) {
         showUpdateToast(reg.waiting);
       }
 
+      // ✅ Si se detecta una nueva versión en esta sesión
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if (!newWorker) return;
@@ -912,6 +1147,7 @@ if ('serviceWorker' in navigator) {
         });
       });
 
+      // ✅ Cuando el nuevo SW toma control, recarga (una sola vez)
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (window.__reloading) return;
         window.__reloading = true;
@@ -925,6 +1161,7 @@ if ('serviceWorker' in navigator) {
 }
 
 function showUpdateToast(worker) {
+  // Evita duplicados
   if (document.getElementById('updateToast')) return;
 
   const toast = document.createElement("div");
@@ -960,6 +1197,7 @@ function showUpdateToast(worker) {
   document.body.appendChild(toast);
 
   document.getElementById('btnUpdate').addEventListener('click', () => {
+    // Activa la nueva versión, el reload lo dispara controllerchange
     worker.postMessage("SKIP_WAITING");
   });
 }
