@@ -1,17 +1,14 @@
-const CACHE_NAME = "rv-fit-v9"; // subir versión para forzar update
+const CACHE_NAME = "rv-fit-v10";
 
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
   "./manifest.json",
 
-  "./splash.png",
-
   "./apple-touch-icon.png",
   "./icon-192.png",
   "./icon-512.png",
 
-  // iPhone 16 Pro startup images
   "./splash-iphone16pro-portrait-1206x2622.png",
   "./splash-iphone16pro-landscape-2622x1206.png"
 ];
@@ -21,14 +18,14 @@ self.addEventListener("install", event => {
     caches.open(CACHE_NAME).then(cache =>
       Promise.all(
         FILES_TO_CACHE.map(url =>
-          cache.add(url).catch(err => {
-            console.warn("No se pudo cachear:", url);
-          })
+          cache.add(url).catch(() => {})
         )
       )
     )
   );
-  self.skipWaiting();
+
+  // NO activamos inmediatamente
+  // Esperamos a que el usuario acepte update
 });
 
 self.addEventListener("activate", event => {
@@ -51,19 +48,23 @@ self.addEventListener("fetch", event => {
     caches.match(event.request).then(response => {
       if (response) return response;
 
-      return fetch(event.request)
-        .then(networkResponse => {
-          // Guarda copia en cache dinámico
-          return caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          });
-        })
-        .catch(() => {
-          if (event.request.mode === "navigate") {
-            return caches.match("./index.html");
-          }
+      return fetch(event.request).then(networkResponse => {
+        return caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
         });
+      }).catch(() => {
+        if (event.request.mode === "navigate") {
+          return caches.match("./index.html");
+        }
+      });
     })
   );
+});
+
+// Escucha mensaje para activar nueva versión
+self.addEventListener("message", event => {
+  if (event.data === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
