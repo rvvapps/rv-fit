@@ -4,10 +4,21 @@
 <meta charset="UTF-8">
 <title>Entrenamientos RV</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="./manifest.json">
+
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="RV FIT">
+
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-512.png">
+
 
 <style>
 :root{
   --primary:#2563eb;
+  --primary2:#60a5fa;
   --scheduled:#fde68a;
   --done:#22c55e;
   --border:#cbd5e1;
@@ -29,6 +40,7 @@ body{
   box-shadow:0 10px 25px rgba(0,0,0,.15);
 }
 h1{text-align:center;margin:.2rem 0 .6rem;font-size:1.1rem;}
+
 button{
   padding:.35rem .55rem;
   border-radius:8px;
@@ -42,12 +54,26 @@ button.active{
   color:white;
   border-color:var(--primary);
 }
+
 .nav{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap:8px;
 }
+#label{
+  display:inline-block;
+  padding:.25rem .6rem;
+  border-radius:999px;
+  background:linear-gradient(135deg, rgba(37,99,235,.12), rgba(96,165,250,.18));
+  border:1px solid rgba(37,99,235,.18);
+  color:var(--primary);
+  font-weight:800;
+  font-size:.85rem;
+}
+
 .center{display:flex;justify-content:center;margin:.5rem 0;}
+
 .calendar{
   display:grid;
   grid-template-columns:repeat(7,1fr);
@@ -73,6 +99,9 @@ button.active{
   position:relative;
   cursor:pointer;
   background:white;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
 }
 .day.weekend{background:var(--weekend);}
 .day.selected{border:2px solid var(--primary);}
@@ -84,7 +113,7 @@ button.active{
   top:4px;
   right:6px;
 }
-.num{margin-top:6px;font-weight:600;}
+.num{margin-top:6px;font-weight:700;}
 .time{font-size:.65rem;}
 .empty{visibility:hidden;}
 
@@ -111,7 +140,43 @@ button.active{
   gap:6px;
   margin-bottom:.5rem;
 }
-.quick-row strong{width:70px;text-align:right;opacity:.7}
+.quick-row strong{width:70px;text-align:right;opacity:.75}
+
+/* WEEK BAR */
+.weekbar{
+  margin:.55rem 0 .2rem;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:.55rem .6rem;
+}
+.weekbar-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:8px;
+  font-size:.75rem;
+}
+.weekbar-title{
+  font-weight:800;
+  color:#0f172a;
+}
+.weekbar-meta{
+  color:#334155;
+  font-weight:700;
+}
+.bar{
+  height:8px;
+  background:#e5e7eb;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:.35rem;
+}
+.fill{
+  height:100%;
+  background:var(--primary);
+  width:0%;
+  transition:width .25s ease;
+}
 
 /* CLEAN BAR */
 .clean-bar{
@@ -125,31 +190,47 @@ button.active{
 .clean-bar button{font-size:.7rem;}
 .clean-bar span{
   cursor:pointer;
-  font-weight:700;
+  font-weight:800;
   color:var(--primary);
 }
 
-/* HISTORY */
+/* HISTORY (past months) */
 .history{
   border:1px solid var(--border);
-  border-radius:10px;
-  padding:.5rem;
+  border-radius:12px;
+  padding:.55rem .6rem;
   margin-top:.6rem;
   font-size:.7rem;
+  display:flex;
+  justify-content:center;
 }
-.history-grid{
+.history-inner{
   display:grid;
-  grid-template-columns:1fr 1fr auto;
-  gap:6px;
+  grid-template-columns: 88px 88px auto;
+  grid-template-rows: auto auto;
+  column-gap:10px;
+  row-gap:6px;
   align-items:center;
-  text-align:center;
+  justify-items:center;
 }
-.history-grid strong{font-size:.65rem;}
-.history input{
-  width:48px;
-  padding:.25rem;
-  font-size:.7rem;
+.history-inner .hlabel{
+  font-weight:800;
+  color:#334155;
+  font-size:.68rem;
+}
+.history-inner input{
+  width:72px;               /* proporcional: no enorme */
+  padding:.28rem .25rem;
+  font-size:.72rem;
   text-align:center;
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.history-inner button{
+  grid-row: 1 / span 2;     /* ocupa alto de 2 filas */
+  height:100%;
+  padding:.35rem .7rem;
+  font-size:.72rem;
 }
 
 /* ANUAL */
@@ -160,25 +241,20 @@ button.active{
   display:none;
 }
 .annual.show{display:block;}
-.annual-row{
-  display:flex;
-  gap:6px;
-}
-.annual-month{
-  flex:1;
-  font-size:.6rem;
-  text-align:center;
-}
+.annual-row{display:flex;gap:6px;}
+.annual-month{flex:1;font-size:.62rem;text-align:center;}
 .annual-bar{
   height:6px;
   background:#e5e7eb;
-  border-radius:4px;
+  border-radius:999px;
   overflow:hidden;
   display:flex;
+  margin:.18rem 0;
 }
 .annual-done{background:var(--done);}
 .annual-sched{background:var(--scheduled);}
 
+/* Toast */
 .toast{
   position:fixed;
   bottom:20px;
@@ -205,6 +281,10 @@ button.active{
   <button onclick="prevMonth()">◀</button>
   <strong id="label"></strong>
   <button onclick="nextMonth()">▶</button>
+</div>
+
+<div class="center" id="monthNowWrap" style="display:none">
+  <button onclick="goToCurrentMonth()">📍 Mes actual</button>
 </div>
 
 <div class="calendar" id="calendar"></div>
@@ -243,6 +323,14 @@ button.active{
   </div>
 </div>
 
+<div class="weekbar" id="weekBar" style="display:none">
+  <div class="weekbar-head">
+    <div class="weekbar-title">Semana actual</div>
+    <div class="weekbar-meta" id="weekMeta">0/0</div>
+  </div>
+  <div class="bar"><div class="fill" id="weekFill"></div></div>
+</div>
+
 <div class="clean-bar" id="cleanBar">
   <button id="cw" onclick="selectClean('week')">🧹 Semana</button>
   <button id="cm" onclick="selectClean('month')">🗑 Mes</button>
@@ -251,20 +339,20 @@ button.active{
 </div>
 
 <div class="history" id="historyPanel" style="display:none">
-  <div class="history-grid">
-    <strong>Programados</strong>
-    <strong>Realizados</strong>
-    <span></span>
-    <input id="hPlan" type="number">
-    <input id="hDone" type="number">
+  <div class="history-inner">
+    <div class="hlabel">Programados</div>
+    <div class="hlabel">Reales</div>
     <button onclick="saveHistory()">Guardar</button>
+
+    <input id="hPlan" type="number" inputmode="numeric">
+    <input id="hDone" type="number" inputmode="numeric">
+    <div></div>
   </div>
 </div>
 
 <div class="center">
   <button onclick="toggleAnnual()">📊 Resumen anual</button>
 </div>
-
 <div class="annual" id="annual"></div>
 
 </div>
@@ -272,25 +360,37 @@ button.active{
 <div class="toast" id="toast"></div>
 
 <script>
+/* Entrenamientos RV - V1 + mejoras solicitadas */
 const STORAGE="rv-data", HST="rv-history";
 let data=JSON.parse(localStorage.getItem(STORAGE)||"{}");
 let history=JSON.parse(localStorage.getItem(HST)||"{}");
+
 let current=new Date(), selected=null;
 let quickDays=new Set(), quickTime=null;
 let cleanMode=null;
 
-const cal=document.getElementById("calendar"),
-label=document.getElementById("label"),
-toast=document.getElementById("toast"),
-quickPanel=document.getElementById("quickPanel"),
-historyPanel=document.getElementById("historyPanel"),
-quickToggle=document.getElementById("quickToggle"),
-programmer=document.getElementById("programmer"),
-cleanBar=document.getElementById("cleanBar"),
-annual=document.getElementById("annual");
+// long tap state
+let pressTimer=null;
+let pressedKey=null;
+const LONG_PRESS_MS=600;
 
-const days=["L","M","M","J","V","S","D"];
-const months=["E","F","M","A","M","J","J","A","S","O","N","D"];
+const cal=document.getElementById("calendar");
+const label=document.getElementById("label");
+const toast=document.getElementById("toast");
+const quickPanel=document.getElementById("quickPanel");
+const historyPanel=document.getElementById("historyPanel");
+const quickToggle=document.getElementById("quickToggle");
+const programmer=document.getElementById("programmer");
+const cleanBar=document.getElementById("cleanBar");
+const annual=document.getElementById("annual");
+const monthNowWrap=document.getElementById("monthNowWrap");
+const weekBar=document.getElementById("weekBar");
+const weekMeta=document.getElementById("weekMeta");
+const weekFill=document.getElementById("weekFill");
+
+const dayNames=["L","M","M","J","V","S","D"];
+const monthNames=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const monthsShort=["E","F","M","A","M","J","J","A","S","O","N","D"];
 
 function save(){
   localStorage.setItem(STORAGE,JSON.stringify(data));
@@ -301,174 +401,323 @@ function showToast(t){
   toast.classList.add("show");
   setTimeout(()=>toast.classList.remove("show"),1500);
 }
+
 function isPastMonth(){
   const n=new Date();
   return current.getFullYear()<n.getFullYear() ||
     (current.getFullYear()===n.getFullYear() && current.getMonth()<n.getMonth());
 }
+function isCurrentMonthView(){
+  const n=new Date();
+  return current.getFullYear()===n.getFullYear() && current.getMonth()===n.getMonth();
+}
 
-/* RENDER */
+function keyToDate(key){
+  const [yy,mm,dd]=key.split("-").map(Number);
+  const dt=new Date(yy,mm,dd);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+function dateToKey(dt){
+  return `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+}
+
+/* ========== RENDER ========== */
 function render(){
   cal.innerHTML="";
-  days.forEach(d=>cal.innerHTML+=`<div class="day-name">${d}</div>`);
+  dayNames.forEach(d=>cal.innerHTML+=`<div class="day-name">${d}</div>`);
 
   const y=current.getFullYear(), m=current.getMonth();
-  label.textContent=`${["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][m]} ${y}`;
+  label.textContent=`${monthNames[m]} ${y}`;
 
   const past=isPastMonth();
-  cal.classList.toggle("past",past);
-  quickToggle.style.display=past?"none":"flex";
-  quickPanel.classList.remove("show");
-  programmer.style.display=past?"none":"flex";
-  cleanBar.style.display=past?"none":"flex";
-  historyPanel.style.display=past?"block":"none";
+  const isCurrent=isCurrentMonthView();
 
-  let first=new Date(y,m,1).getDay()||7;
-  let total=new Date(y,m+1,0).getDate();
-  let today=new Date(); today.setHours(0,0,0,0);
+  // UI visibility rules
+  cal.classList.toggle("past",past);
+  programmer.style.display = past ? "none" : "flex";
+  quickToggle.style.display = past ? "none" : "flex";
+  quickPanel.classList.remove("show");
+  cleanBar.style.display = past ? "none" : "flex";
+  historyPanel.style.display = past ? "flex" : "none";
+  weekBar.style.display = (!past && isCurrent) ? "block" : "none";
+  monthNowWrap.style.display = isCurrent ? "none" : "flex";
+
+  // fill history inputs if present
+  if(past){
+    const hk = `${y}-${m}`;
+    const h = history[hk] || {plan:"", done:""};
+    document.getElementById("hPlan").value = (h.plan ?? "");
+    document.getElementById("hDone").value = (h.done ?? "");
+  }
+
+  // calendar build
+  const first=(new Date(y,m,1).getDay()||7);
+  const total=(new Date(y,m+1,0).getDate());
+  const today=new Date(); today.setHours(0,0,0,0);
 
   for(let i=1;i<first;i++) cal.innerHTML+='<div class="empty"></div>';
 
-  for(let d=1;d<=total;d++){
-    let date=new Date(y,m,d); date.setHours(0,0,0,0);
-    let key=`${y}-${m}-${d}`;
-    let c=document.createElement("div");
-    c.className="day";
-    if(date.getDay()===0||date.getDay()===6) c.classList.add("weekend");
-    if(key===selected) c.classList.add("selected");
-    if(data[key]) c.classList.add(data[key].done?"done":"scheduled");
-    c.innerHTML=`<div class="num">${d}</div><div class="time">${data[key]?.time||""}</div>`;
+  for(let d=1; d<=total; d++){
+    const date=new Date(y,m,d); date.setHours(0,0,0,0);
+    const key=`${y}-${m}-${d}`;
 
-    c.onclick=()=>{
+    const cell=document.createElement("div");
+    cell.className="day";
+    if(date.getDay()===0||date.getDay()===6) cell.classList.add("weekend");
+    if(key===selected) cell.classList.add("selected");
+    if(data[key]) cell.classList.add(data[key].done ? "done" : "scheduled");
+
+    cell.innerHTML=`<div class="num">${d}</div><div class="time">${data[key]?.time||""}</div>`;
+
+    // click: select, and toggle done only if scheduled and date <= today and not past month view
+    cell.addEventListener("click", ()=>{
       selected=key;
-      if(data[key] && date<=today && !past){
-        data[key].done=!data[key].done; save();
+      if(!past && data[key] && date<=today){
+        data[key].done = !data[key].done;
+        save();
       }
       render();
+    });
+
+    // long press delete (only current/future month view, not past)
+    const startPress = (ev)=>{
+      if(past) return;
+      pressedKey = key;
+      clearTimeout(pressTimer);
+      pressTimer = setTimeout(()=>{
+        if(pressedKey !== key) return;
+        if(data[key]){
+          delete data[key];
+          save();
+          showToast("Día eliminado");
+          if(selected===key) selected=null;
+          render();
+        }else{
+          showToast("Nada que borrar");
+        }
+      }, LONG_PRESS_MS);
+      ev.preventDefault?.();
     };
-    cal.appendChild(c);
+    const endPress = ()=>{
+      pressedKey=null;
+      clearTimeout(pressTimer);
+    };
+
+    cell.addEventListener("touchstart", startPress, {passive:false});
+    cell.addEventListener("touchend", endPress);
+    cell.addEventListener("touchcancel", endPress);
+    cell.addEventListener("mousedown", startPress);
+    cell.addEventListener("mouseup", endPress);
+    cell.addEventListener("mouseleave", endPress);
+
+    cal.appendChild(cell);
   }
+
+  if(!past && isCurrent){
+    renderWeekBar();
+  }
+  renderAnnual(); // keep annual contents synced
 }
 
-/* PROGRAMACIÓN */
+/* ========== PROGRAMACIÓN MANUAL ========== */
 function setTime(t){
-  if(!selected||isPastMonth()) return;
+  if(isPastMonth()) return;
+  if(!selected){ showToast("Selecciona un día"); return; }
   data[selected]={time:t,done:false};
-  save(); render();
+  save();
+  render();
 }
 
-/* QUICK */
-function toggleQuick(){ quickPanel.classList.toggle("show"); }
+/* ========== QUICK ========== */
+function toggleQuick(){ if(!isPastMonth()) quickPanel.classList.toggle("show"); }
 function toggleQuickDay(d){
-  quickDays.has(d)?quickDays.delete(d):quickDays.add(d);
-  event.target.classList.toggle("active");
+  if(isPastMonth()) return;
+  if(quickDays.has(d)){ quickDays.delete(d); event.target.classList.remove("active"); }
+  else{ quickDays.add(d); event.target.classList.add("active"); }
 }
 function setQuickTime(t){
+  if(isPastMonth()) return;
   quickTime=t;
-  event.target.parentNode.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+  // remove active only from Hora row buttons
+  const row = event.target.closest(".quick-row");
+  row.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
   event.target.classList.add("active");
 }
 function applyQuick(){
-  if(isPastMonth()||!quickTime||!quickDays.size) return;
-  let y=current.getFullYear(), m=current.getMonth();
-  for(let d=1;d<=31;d++){
-    let date=new Date(y,m,d);
-    if(date.getMonth()!==m) continue;
-    if(quickDays.has(date.getDay())){
-      let k=`${y}-${m}-${d}`;
-      if(!data[k]) data[k]={time:quickTime,done:false};
+  if(isPastMonth()) return;
+  if(!quickTime){ showToast("Elige una hora"); return; }
+  if(!quickDays.size){ showToast("Elige días"); return; }
+
+  const y=current.getFullYear(), m=current.getMonth();
+  for(let d=1; d<=31; d++){
+    const dt=new Date(y,m,d);
+    if(dt.getMonth()!==m) continue;
+    if(quickDays.has(dt.getDay())){
+      const k=`${y}-${m}-${d}`;
+      if(!data[k]) data[k]={time:quickTime,done:false}; // no pisa existentes
     }
   }
-  save(); render(); showToast("Programación aplicada");
+  save();
+  showToast("Programación aplicada");
+  render();
 }
 
-/* LIMPIEZA */
+/* ========== WEEK BAR (Semana actual: programados a la fecha vs reales) ========== */
+function startOfWeekMonday(dt){
+  const d=new Date(dt); d.setHours(0,0,0,0);
+  const day=(d.getDay()+6)%7; // Mon=0 ... Sun=6
+  d.setDate(d.getDate()-day);
+  return d;
+}
+function renderWeekBar(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const ws=startOfWeekMonday(today);
+  const we=new Date(ws); we.setDate(ws.getDate()+6);
+
+  let planned=0, done=0;
+  Object.keys(data).forEach(k=>{
+    const dt=keyToDate(k);
+    if(dt < ws || dt > we) return;
+    // "a la fecha": solo fechas que ya ocurrieron (<= hoy)
+    if(dt > today) return;
+    planned += 1;
+    if(data[k].done) done += 1;
+  });
+
+  weekMeta.textContent = `${done}/${planned}`;
+  const pct = planned ? Math.round((done/planned)*100) : 0;
+  weekFill.style.width = pct + "%";
+}
+
+/* ========== CLEAN BAR ========== */
 function selectClean(m){
   cleanMode=m;
   ["cw","cm","ca"].forEach(id=>document.getElementById(id).classList.remove("active"));
   document.getElementById(m==="week"?"cw":m==="month"?"cm":"ca").classList.add("active");
 }
 function executeClean(){
+  if(isPastMonth()){ return; }
   if(!cleanMode){ showToast("Selecciona qué borrar"); return; }
-  if(cleanMode!=="all" && !selected){ showToast("Selecciona un día"); return; }
 
-  if(cleanMode==="week"){
-    let [y,m,d]=selected.split("-").map(Number);
-    let base=new Date(y,m,d);
-    let start=new Date(base); start.setDate(start.getDate()-((start.getDay()+6)%7));
-    let end=new Date(start); end.setDate(start.getDate()+6);
-    Object.keys(data).forEach(k=>{
-      let [yy,mm,dd]=k.split("-").map(Number);
-      let dt=new Date(yy,mm,dd);
-      if(dt>=start && dt<=end) delete data[k];
-    });
-    showToast("Semana borrada");
-  }
-  if(cleanMode==="month"){
-    let [y,m]=selected.split("-").map(Number);
-    Object.keys(data).forEach(k=>{
-      let [yy,mm]=k.split("-").map(Number);
-      if(yy===y && mm===m) delete data[k];
-    });
-    showToast("Mes borrado");
-  }
   if(cleanMode==="all"){
     if(!confirm("¿Borrar todo el calendario?")) return;
-    data={}; showToast("Todo borrado");
+    data={};
+    save();
+    showToast("Todo borrado");
+    selected=null;
+    render();
+    return;
   }
-  save(); render();
+
+  if(!selected){ showToast("Selecciona un día"); return; }
+  const base=keyToDate(selected);
+
+  if(cleanMode==="week"){
+    const ws=startOfWeekMonday(base);
+    const we=new Date(ws); we.setDate(ws.getDate()+6);
+    Object.keys(data).forEach(k=>{
+      const dt=keyToDate(k);
+      if(dt>=ws && dt<=we) delete data[k];
+    });
+    save();
+    showToast("Semana borrada");
+    selected=null;
+    render();
+  }
+
+  if(cleanMode==="month"){
+    const y=base.getFullYear(), m=base.getMonth();
+    Object.keys(data).forEach(k=>{
+      const [yy,mm]=k.split("-").map(Number);
+      if(yy===y && mm===m) delete data[k];
+    });
+    save();
+    showToast("Mes borrado");
+    selected=null;
+    render();
+  }
 }
 
-/* HISTÓRICO */
+/* ========== HISTÓRICO ========== */
 function saveHistory(){
-  let key=`${current.getFullYear()}-${current.getMonth()}`;
-  history[key]={plan:+hPlan.value||0,done:+hDone.value||0};
-  save(); showToast("Histórico guardado");
+  const y=current.getFullYear(), m=current.getMonth();
+  const key=`${y}-${m}`;
+  const plan = Number(document.getElementById("hPlan").value || 0);
+  const done = Number(document.getElementById("hDone").value || 0);
+  history[key]={plan, done};
+  localStorage.setItem(HST, JSON.stringify(history));
+  showToast("Histórico guardado");
+  renderAnnual();
 }
 
-/* ANUAL */
+/* ========== ANNUAL ========== */
 function toggleAnnual(){
   annual.classList.toggle("show");
   renderAnnual();
 }
 function renderAnnual(){
+  if(!annual.classList.contains("show")){
+    // igual mantenemos datos listos, pero no hace falta repintar
+    return;
+  }
   annual.innerHTML="";
-  let y=current.getFullYear();
-  let row=document.createElement("div");
+  const y=current.getFullYear();
+  const row=document.createElement("div");
   row.className="annual-row";
 
-  for(let m=0;m<12;m++){
-    let plan=0,done=0;
-    Object.keys(data).forEach(k=>{
-      let [yy,mm]=k.split("-").map(Number);
-      if(yy===y&&mm===m){
-        plan++;
-        if(data[k].done) done++;
-      }
-    });
-    let h=history[`${y}-${m}`];
-    if(h){ plan=h.plan; done=h.done; }
+  for(let m=0; m<12; m++){
+    let plan=0, done=0;
 
-    let pct=plan?done/plan:0;
-    let c=document.createElement("div");
+    // prefer historic override if present
+    const hk=`${y}-${m}`;
+    if(history[hk]){
+      plan = Number(history[hk].plan || 0);
+      done = Number(history[hk].done || 0);
+    }else{
+      Object.keys(data).forEach(k=>{
+        const [yy,mm]=k.split("-").map(Number);
+        if(yy===y && mm===m){
+          plan += 1;
+          if(data[k].done) done += 1;
+        }
+      });
+    }
+
+    const pct = plan ? (done/plan) : 0;
+    const c=document.createElement("div");
     c.className="annual-month";
     c.innerHTML=`
-      <strong>${months[m]}</strong>
+      <strong>${monthsShort[m]}</strong>
       <div class="annual-bar">
-        <div class="annual-done" style="width:${pct*100}%"></div>
-        <div class="annual-sched" style="width:${(1-pct)*100}%"></div>
+        <div class="annual-done" style="width:${(pct*100).toFixed(1)}%"></div>
+        <div class="annual-sched" style="width:${((1-pct)*100).toFixed(1)}%"></div>
       </div>
       ${done}/${plan}
     `;
     row.appendChild(c);
   }
+
   annual.appendChild(row);
 }
 
+/* ========== NAV ========== */
 function prevMonth(){ current.setMonth(current.getMonth()-1); selected=null; render(); }
 function nextMonth(){ current.setMonth(current.getMonth()+1); selected=null; render(); }
+function goToCurrentMonth(){ current=new Date(); selected=null; render(); }
 
+/* init */
 render();
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registrado', reg.scope))
+      .catch(err => console.error('SW error', err));
+  });
+}
+</script>
+
 </body>
 </html>
