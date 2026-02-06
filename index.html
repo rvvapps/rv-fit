@@ -82,9 +82,98 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
 
 
 
+
+/* =============================
+   Splash in-app (sobrio + fluido)
+   ============================= */
+#splashOverlay{
+  position:fixed;
+  inset:0;
+  z-index:999998;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(900px 600px at 50% 28%, rgba(37,99,235,.18), transparent 60%),
+    linear-gradient(180deg, #f8fafc, #f2f2f7);
+  opacity:1;
+  transform: translateZ(0);
+  transition: opacity .22s ease, transform .22s ease;
+}
+
+#splashOverlay .splashCard{
+  width:min(320px, 84vw);
+  padding:22px 18px 16px;
+  border-radius:22px;
+  background: rgba(255,255,255,.86);
+  border:1px solid rgba(60,60,67,.14);
+  box-shadow: 0 18px 40px rgba(0,0,0,.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  text-align:center;
+}
+
+#splashOverlay .splashLogo{
+  width:120px;
+  height:120px;
+  object-fit:contain;
+  display:block;
+  margin:0 auto 10px;
+}
+
+#splashOverlay .splashTitle{
+  font-weight:900;
+  letter-spacing:-.3px;
+  color:#0f172a;
+  margin-bottom:12px;
+}
+
+#splashOverlay .splashBar{
+  height:8px;
+  background: rgba(60,60,67,.12);
+  border-radius:999px;
+  overflow:hidden;
+}
+#splashOverlay .splashBar span{
+  display:block;
+  height:100%;
+  width:42%;
+  border-radius:999px;
+  background: rgba(37,99,235,.55);
+  transform: translateX(-120%);
+  animation: splashMove 1.05s ease-in-out infinite;
+}
+
+@keyframes splashMove{
+  0%   { transform: translateX(-120%); }
+  55%  { transform: translateX(210%); }
+  100% { transform: translateX(210%); }
+}
+
+#splashOverlay.hide{
+  opacity:0;
+  transform: scale(.995);
+  pointer-events:none;
+}
+#splashOverlay.gone{ display:none; }
+
+@media (prefers-reduced-motion: reduce){
+  #splashOverlay, #splashOverlay .splashCard{ transition:none; }
+  #splashOverlay .splashBar span{ animation:none; transform:none; width:60%; }
+}
+
 </style>
 </head>
 <body>
+<!-- Splash (in-app) -->
+<div id="splashOverlay" role="status" aria-live="polite" aria-label="Cargando RV FIT">
+  <div class="splashCard">
+    <img class="splashLogo" src="/rv-fit/splash.png" alt="" onerror="this.src='/rv-fit/icon-512.png'" />
+    <div class="splashTitle">RV FIT</div>
+    <div class="splashBar" aria-hidden="true"><span></span></div>
+  </div>
+</div>
+
 <div class="container">
   <h1>Entrenamientos</h1>
 
@@ -641,10 +730,39 @@ $("#file").addEventListener("change", async (ev)=>{
   try{ await importBackup(f);}catch(e){console.error(e); toastMsg("Error al importar");}
 });
 
+
+function initSplash(){
+  const el = document.getElementById("splashOverlay");
+  if(!el) return;
+
+  const MIN_MS = 520;   // evita parpadeo
+  const MAX_MS = 2600;  // seguridad
+  const start = Date.now();
+  let hidden = false;
+
+  const hide = () => {
+    if(hidden) return;
+    hidden = true;
+    const elapsed = Date.now() - start;
+    const wait = Math.max(0, MIN_MS - elapsed);
+
+    setTimeout(() => {
+      el.classList.add("hide");
+      setTimeout(() => el.classList.add("gone"), 260);
+    }, wait);
+  };
+
+  // Cuando el primer render ya pintó
+  requestAnimationFrame(() => requestAnimationFrame(hide));
+  // Failsafe
+  setTimeout(hide, MAX_MS);
+}
+
 // ====== Init ======
 migrate();
 rebuild();
 render();
+initSplash();
 </script>
 
 <script>
