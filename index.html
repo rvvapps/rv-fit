@@ -437,158 +437,45 @@ button.active{
 
 
 
-/* =============================
-   iOS-look polish (2026-02-06)
-   - más aire
-   - tarjetas tipo iOS
-   - tipografía/espaciado
-   - barras separadas del calendario
-   ============================= */
+/* ===== Fix iOS look: Limpieza + Programación rápida ===== */
 
-:root{
-  --ios-bg:#f2f2f7;
-  --ios-card:rgba(255,255,255,.92);
-  --ios-sep:rgba(60,60,67,.18);
-  --ios-text:#111827;
-  --ios-sub:#6b7280;
-  --ios-shadow:0 12px 28px rgba(0,0,0,.10);
+.container,
+.panel,
+.quick-panel{
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
-html, body{ background:var(--ios-bg); }
-
-body{
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  color:var(--ios-text);
+.panel,
+.quick-panel{
+  overflow: hidden;
 }
 
-/* Contenedor como “card” iOS */
-.container{
-  background:var(--ios-card);
-  border:1px solid var(--ios-sep);
-  box-shadow:var(--ios-shadow);
-  border-radius:22px;
-  padding:18px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+/* Programación rápida wrap correcto */
+.quick-row{
+  flex-wrap: wrap !important;
+  justify-content: center;
 }
 
-/* Título más iOS */
-h1{
-  font-size:1.25rem;
-  letter-spacing:-0.2px;
-  margin:6px 0 14px;
+.quick-row strong{
+  width: auto !important;
+  min-width: 70px;
+  text-align: left;
+  opacity: .8;
 }
 
-/* Header label tipo pill */
-#label{
-  font-size:.92rem;
-  padding:.32rem .72rem;
-  border-radius:999px;
-  background:linear-gradient(135deg, rgba(37,99,235,.14), rgba(96,165,250,.18));
-  border:1px solid rgba(37,99,235,.22);
+.quick-panel input[type="time"]{
+  max-width: 140px;
 }
 
-/* Botones: toque iOS */
-button{
-  border-radius:14px;
-  padding:.5rem .7rem;
-  font-weight:700;
-  letter-spacing:-0.1px;
-  box-shadow:0 1px 0 rgba(0,0,0,.03);
-}
-button:active{ transform: translateY(0.5px); }
-
-/* Calendar con aire + estilo iOS */
-.calendar{ gap:6px; margin-top:10px; margin-bottom:14px; }
-.day{
-  border-radius:14px;
-  border:1px solid rgba(60,60,67,.20);
-  box-shadow: 0 1px 0 rgba(0,0,0,.02);
-  height:70px;
-}
-.day-name{ color:rgba(60,60,67,.70); font-weight:800; }
-
-.day.weekend{ background:rgba(60,60,67,.06); }
-
-/* Selección: borde suave + glow */
-.day.selected{
-  outline:none;
-  border:2px solid rgba(37,99,235,.85);
-  box-shadow:0 0 0 4px rgba(37,99,235,.14);
-}
-
-/* Programado / hecho con más “iOS vibe” */
-.day.scheduled{
-  background:linear-gradient(180deg, rgba(253,230,138,.95), rgba(253,230,138,.80));
-}
-.day.done{
-  background:linear-gradient(180deg, rgba(34,197,94,.98), rgba(34,197,94,.80));
-}
-.day.done::after{
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,.18));
-}
-
-/* Separación real entre calendario y barras */
-#calendar, #cal{ margin-bottom:14px; }
-#progressRow{ margin-top:12px; gap:12px; }
-
-/* Barras: como cards separadas */
-.weekbar{
-  background:rgba(255,255,255,.75);
-  border:1px solid rgba(60,60,67,.18);
-  border-radius:16px;
-  box-shadow:0 8px 18px rgba(0,0,0,.06);
-  padding:.7rem .75rem;
-}
-.weekbar-head{ font-size:.78rem; }
-.weekbar-title{ letter-spacing:-0.1px; }
-.weekbar-meta{ color:var(--ios-sub); }
-
-.bar{ height:10px; background:rgba(60,60,67,.12); }
-.fill{ border-radius:999px; }
-
-/* Fila de acciones tipo “segmented cards” */
-.actions-row{ gap:12px; margin:14px 0 10px; }
-.action-btn{
-  border-radius:18px;
-  border:1px solid rgba(60,60,67,.18);
-  box-shadow:0 10px 18px rgba(0,0,0,.07);
-  padding:.68rem .7rem;
-}
-.action-btn.active{
-  background:linear-gradient(135deg, rgba(37,99,235,.16), rgba(96,165,250,.20));
-  border-color:rgba(37,99,235,.30);
-}
-
-/* Paneles con más aire */
-.panel{
-  border-radius:18px;
-  border:1px solid rgba(60,60,67,.16);
-  background:rgba(255,255,255,.70);
-  box-shadow:0 8px 16px rgba(0,0,0,.06);
-  padding:.75rem;
-}
-
-/* Inputs más iOS */
-.time-input-row input[type="time"],
-.quick-panel input[type="time"],
-.history-inner input{
-  border-radius:14px;
-  border:1px solid rgba(60,60,67,.22);
-  background:rgba(255,255,255,.92);
-}
-
-/* Toast más iOS */
-.toast{
-  border-radius:18px;
-  box-shadow:0 14px 30px rgba(0,0,0,.18);
-}
-
-/* Ajuste fino en pantallas chicas */
-@media (max-width: 420px){
-  .container{ padding:16px; }
-  .day{ height:68px; }
-  #progressRow{ gap:10px; }
+/* Limpieza siempre visible y ordenado */
+.clean-bar,
+#cleanBar{
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 </style>
