@@ -1,6 +1,6 @@
 /* sw.js — RV FIT (GitHub Pages: /rv-fit/) */
 
-const VERSION = "rvfit-v3-2026-02-06b";
+const VERSION = "rvfit-v3-2026-02-06";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const BASE = "/rv-fit/";
@@ -12,9 +12,6 @@ const PRECACHE_URLS = [
   BASE + "apple-touch-icon.png",
   BASE + "icon-192.png",
   BASE + "icon-512.png",
-  // Optional splash (ignore if missing)
-  BASE + "splash-iphone16pro-portrait-1206x2622.png",
-  BASE + "splash-iphone16pro-landscape-2622x1206.png",
 ];
 
 self.addEventListener("install", (event) => {
