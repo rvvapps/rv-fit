@@ -735,8 +735,9 @@ function initSplash(){
   const el = document.getElementById("splashOverlay");
   if(!el) return;
 
-  const MIN_MS = 520;   // evita parpadeo
-  const MAX_MS = 2600;  // seguridad
+const MIN_MS = 1500;  // mínimo visible (más “presencia”)
+const MAX_MS = 4000;  // seguridad
+
   const start = Date.now();
   let hidden = false;
 
