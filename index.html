@@ -243,6 +243,35 @@ button.active{
   transition:width .25s ease;
 }
 
+/* WEEK + MONTH ROW */
+.progress-row{
+  display:flex;
+  gap:10px;
+  margin:.55rem 0 .2rem;
+}
+.progress-row .weekbar{
+  flex:1;
+  margin:0;
+}
+
+/* Manual time inputs */
+.time-input-row{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  align-items:center;
+  margin:.25rem 0 .45rem;
+}
+.time-input-row input[type="time"]{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:.35rem .5rem;
+  font-size:.75rem;
+  width:130px;
+}
+.time-input-row button{
+  padding:.35rem .7rem;
+}
 /* CLEAN BAR */
 .clean-bar{
   display:flex;
@@ -436,13 +465,25 @@ button.active{
 
 <div class="calendar" id="calendar"></div>
 
-<!-- Semana actual (solo mes actual) -->
-<div class="weekbar" id="weekBar" style="display:none">
-  <div class="weekbar-head">
-    <div class="weekbar-title">Semana actual</div>
-    <div class="weekbar-meta" id="weekMeta">0/0</div>
+<!-- Barras de avance (solo mes actual) -->
+<div class="progress-row" id="progressRow" style="display:none">
+  <!-- Semana actual -->
+  <div class="weekbar" id="weekBar">
+    <div class="weekbar-head">
+      <div class="weekbar-title">Semana actual</div>
+      <div class="weekbar-meta" id="weekMeta">0/0</div>
+    </div>
+    <div class="bar"><div class="fill" id="weekFill"></div></div>
   </div>
-  <div class="bar"><div class="fill" id="weekFill"></div></div>
+
+  <!-- Mes actual -->
+  <div class="weekbar" id="monthBar">
+    <div class="weekbar-head">
+      <div class="weekbar-title">Mes actual</div>
+      <div class="weekbar-meta" id="monthMeta">0/0</div>
+    </div>
+    <div class="bar"><div class="fill" id="monthFill"></div></div>
+  </div>
 </div>
 
 <!-- Resumen anual -->
@@ -468,7 +509,12 @@ button.active{
     <button onclick="setTime('--:--')">--:--</button>
   </div>
 
-  <div class="quick-toggle" id="quickToggle">
+    <div class="time-input-row">
+    <input type="time" id="manualTime" aria-label="Hora manual">
+    <button onclick="applyManualTime()">OK</button>
+  </div>
+
+<div class="quick-toggle" id="quickToggle">
     <button onclick="toggleQuick()">⚡ Programación rápida</button>
   </div>
 
@@ -489,6 +535,8 @@ button.active{
       <button onclick="setQuickTime('07:00')">07:00</button>
       <button onclick="setQuickTime('07:30')">07:30</button>
       <button onclick="setQuickTime('--:--')">--:--</button>
+          <input type="time" id="quickManualTime" aria-label="Hora manual rápida" style="margin-left:6px;">
+      <button onclick="applyQuickManualTime()">OK</button>
     </div>
     <div class="center">
       <button onclick="applyQuick()">Programar</button>
@@ -591,9 +639,13 @@ const quickPanel=document.getElementById("quickPanel");
 const historyPanel=document.getElementById("historyPanel");
 const annual=document.getElementById("annual");
 const monthNowWrap=document.getElementById("monthNowWrap");
+const progressRow=document.getElementById("progressRow");
 const weekBar=document.getElementById("weekBar");
 const weekMeta=document.getElementById("weekMeta");
 const weekFill=document.getElementById("weekFill");
+const monthBar=document.getElementById("monthBar");
+const monthMeta=document.getElementById("monthMeta");
+const monthFill=document.getElementById("monthFill");
 
 const actionsRow=document.getElementById("actionsRow");
 const btnProgram=document.getElementById("btnProgram");
@@ -814,7 +866,7 @@ function render(){
   historyPanel.style.display = past ? "flex" : "none";
 
   // Semana actual: solo mes actual
-  weekBar.style.display = (!past && isCurrent) ? "block" : "none";
+  progressRow.style.display = (!past && isCurrent) ? "flex" : "none";
 
   // Botón mes actual
   monthNowWrap.style.display = isCurrent ? "none" : "flex";
@@ -929,6 +981,7 @@ cell.addEventListener("mouseleave", endPress);
 
   if(!past && isCurrent){
     renderWeekBar();
+    renderMonthBar();
   }
   renderAnnual(); // keep annual contents synced
 }
@@ -940,6 +993,34 @@ function setTime(t){
   data[selected]={time:t,done:false};
   save();
   render();
+}
+
+
+function normalizeTimeStr(v){
+  if(!v) return "";
+  return String(v).trim().slice(0,5);
+}
+
+function applyManualTime(){
+  if(isPastMonth()) return;
+  const inp=document.getElementById("manualTime");
+  const t=normalizeTimeStr(inp && inp.value);
+  if(!t){ showToast("Ingresa una hora"); return; }
+  setTime(t);
+  showToast("Hora aplicada");
+}
+
+function applyQuickManualTime(){
+  if(isPastMonth()) return;
+  const inp=document.getElementById("quickManualTime");
+  const t=normalizeTimeStr(inp && inp.value);
+  if(!t){ showToast("Ingresa una hora"); return; }
+  quickTime=t;
+
+  // limpiar estados activos de los botones de hora (si existían)
+  const row = inp && inp.closest(".quick-row");
+  if(row) row.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+  showToast("Hora rápida aplicada");
 }
 
 /* ========== QUICK ========== */
@@ -992,8 +1073,8 @@ function renderWeekBar(){
   Object.keys(data).forEach(k=>{
     const dt=keyToDate(k);
     if(dt < ws || dt > we) return;
-    // "a la fecha": solo fechas que ya ocurrieron (<= hoy)
-    if(dt > today) return;
+
+    // ✅ Total programado de la semana completa (incluye días futuros dentro de la semana)
     planned += 1;
     if(data[k].done) done += 1;
   });
@@ -1002,6 +1083,23 @@ function renderWeekBar(){
   const pct = planned ? Math.round((done/planned)*100) : 0;
   weekFill.style.width = pct + "%";
 }
+
+function renderMonthBar(){
+  const y=current.getFullYear(), m=current.getMonth();
+  let planned=0, done=0;
+
+  Object.keys(data).forEach(k=>{
+    const [yy,mm] = k.split("-").map(Number);
+    if(yy!==y || mm!==m) return;
+    planned += 1;
+    if(data[k].done) done += 1;
+  });
+
+  monthMeta.textContent = `${done}/${planned}`;
+  const pct = planned ? Math.round((done/planned)*100) : 0;
+  monthFill.style.width = pct + "%";
+}
+
 
 /* ========== CLEAN BAR ========== */
 function selectClean(m){
