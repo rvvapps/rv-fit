@@ -97,6 +97,41 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
 }
 
 /* =============================
+   Tarjeta de pago
+   ============================= */
+#payCard{
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px 14px;
+  margin:12px 0 4px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  cursor:pointer;
+  transition:border-color .2s;
+  user-select:none;
+}
+#payCard.pay-ok  { border-color:#22c55e; background:rgba(34,197,94,.06); }
+#payCard.pay-warn{ border-color:#f59e0b; background:rgba(245,158,11,.06); }
+#payCard.pay-due { border-color:#ef4444; background:rgba(239,68,68,.06); }
+#payCard.pay-none{ border-color:var(--border); background:#fafafa; }
+#payCard .pay-left{ display:flex;flex-direction:column;gap:2px;min-width:0; }
+#payCard .pay-label{ font-size:.68rem;color:#64748b;font-weight:600;letter-spacing:.02em }
+#payCard .pay-date { font-size:.92rem;font-weight:900;color:#0f172a }
+#payCard .pay-days { font-size:.68rem;font-weight:700 }
+#payCard.pay-ok   .pay-days{ color:#16a34a }
+#payCard.pay-warn .pay-days{ color:#b45309 }
+#payCard.pay-due  .pay-days{ color:#dc2626 }
+#payCard .pay-edit{ font-size:.72rem;color:#94a3b8;flex-shrink:0 }
+#payPanel{ margin:0 0 8px; }
+#payPanel .pay-periods{ display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px }
+#payPanel .pay-period-btn{ padding:.35rem .7rem;font-size:.78rem }
+#payPanel .pay-date-row{ display:flex;gap:8px;align-items:center;justify-content:center }
+#payPanel label{ font-size:.75rem;color:#334155;font-weight:700 }
+#payPanel input[type=date]{ border:1px solid var(--border);border-radius:10px;padding:.35rem .5rem;font-size:.78rem }
+
+/* =============================
    Splash in-app (sobrio + fluido)
    ============================= */
 #splashOverlay{
@@ -220,6 +255,29 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
     </div>
   </div>
 
+  <!-- Tarjeta de pago -->
+  <div id="payCard" class="pay-none" role="button" tabindex="0" aria-label="Estado de pago">
+    <div class="pay-left">
+      <div class="pay-label">💳 PAGO VIGENTE HASTA</div>
+      <div class="pay-date" id="payDateTxt">—</div>
+      <div class="pay-days" id="payDaysTxt"></div>
+    </div>
+    <div class="pay-edit">✏️ editar</div>
+  </div>
+  <div class="panel" id="payPanel">
+    <div class="pay-periods" id="payPeriods">
+      <button class="pay-period-btn" type="button" data-months="1">+1 mes</button>
+      <button class="pay-period-btn" type="button" data-months="3">+3 meses</button>
+      <button class="pay-period-btn" type="button" data-months="6">+6 meses</button>
+      <button class="pay-period-btn" type="button" data-months="12">+1 año</button>
+    </div>
+    <div class="pay-date-row">
+      <label for="payDateInput">Fecha exacta</label>
+      <input type="date" id="payDateInput">
+      <button id="payDateOk" type="button">OK</button>
+    </div>
+  </div>
+
   <!-- FIX #7: resumen anual con navegación de años -->
   <div class="annual" id="annual">
     <div class="annual-nav">
@@ -302,7 +360,7 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
 
 <script>
 // ====== Data + migration ======
-const STORAGE="rv-data", HST="rv-history", META="rv-backup-meta";
+const STORAGE="rv-data", HST="rv-history", META="rv-backup-meta", PAY="rv-pay";
 const dayNames=["L","M","M","J","V","S","D"];
 const monthNames=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const monthsShort=["E","F","M","A","M","J","J","A","S","O","N","D"];
@@ -901,10 +959,95 @@ function initSplash(){
   setTimeout(hide, MAX_MS);
 }
 
+// ====== Pago ======
+function getPayDate(){
+  const v=localStorage.getItem(PAY);
+  return v||null; // formato "YYYY-MM-DD"
+}
+function setPayDate(iso){
+  if(iso) localStorage.setItem(PAY, iso);
+  else localStorage.removeItem(PAY);
+}
+function payDaysLeft(iso){
+  // días hasta fin del día de vencimiento
+  const exp=new Date(iso); exp.setHours(23,59,59,999);
+  return Math.ceil((exp.getTime()-Date.now())/(1000*60*60*24));
+}
+function renderPayCard(){
+  const iso=getPayDate();
+  const card=document.getElementById("payCard");
+  const dateTxt=document.getElementById("payDateTxt");
+  const daysTxt=document.getElementById("payDaysTxt");
+  // quitar clases de estado
+  card.className="";
+  if(!iso){
+    card.classList.add("pay-none");
+    dateTxt.textContent="Sin registrar";
+    daysTxt.textContent="Toca para agregar fecha de vencimiento";
+    return;
+  }
+  // formatear fecha legible
+  const [y,m,d]=iso.split("-").map(Number);
+  const fmt=new Date(y,m-1,d).toLocaleDateString("es",{day:"numeric",month:"long",year:"numeric"});
+  dateTxt.textContent=fmt;
+  const days=payDaysLeft(iso);
+  if(days<0){
+    card.classList.add("pay-due");
+    daysTxt.textContent=`Venció hace ${Math.abs(days)} día${Math.abs(days)===1?"":"s"}`;
+  } else if(days<=14){
+    card.classList.add("pay-warn");
+    daysTxt.textContent=`Vence en ${days} día${days===1?"":"s"}`;
+  } else {
+    card.classList.add("pay-ok");
+    daysTxt.textContent=`${days} días restantes`;
+  }
+}
+function addMonthsToDate(iso, months){
+  // si no hay fecha base, partir de hoy
+  let base = iso ? new Date(iso.split("-").map((v,i)=>i===1?+v-1:+v)) : new Date();
+  base.setHours(0,0,0,0);
+  base.setMonth(base.getMonth()+months);
+  // retroceder al último día del mes si se pasó (ej: 31 ene + 1 mes = 28 feb)
+  return `${base.getFullYear()}-${pad2(base.getMonth()+1)}-${pad2(base.getDate())}`;
+}
+
+// listeners pago
+document.getElementById("payCard").addEventListener("click",()=>{
+  const panel=document.getElementById("payPanel");
+  const open=panel.classList.toggle("show");
+  if(open){
+    const iso=getPayDate();
+    document.getElementById("payDateInput").value=iso||"";
+  }
+});
+document.getElementById("payCard").addEventListener("keydown",(e)=>{
+  if(e.key==="Enter"||e.key===" ") document.getElementById("payCard").click();
+});
+document.getElementById("payPeriods").addEventListener("click",(ev)=>{
+  const b=ev.target.closest("button[data-months]"); if(!b) return;
+  const months=+b.dataset.months;
+  const newIso=addMonthsToDate(getPayDate(), months);
+  setPayDate(newIso);
+  document.getElementById("payDateInput").value=newIso;
+  renderPayCard();
+  toastMsg("Pago actualizado");
+});
+document.getElementById("payDateOk").addEventListener("click",()=>{
+  const v=document.getElementById("payDateInput").value;
+  if(!v) return toastMsg("Elige una fecha");
+  setPayDate(v);
+  document.getElementById("payPanel").classList.remove("show");
+  renderPayCard();
+  toastMsg("Fecha de pago guardada");
+});
+
 // ====== Init ======
 migrate();
 rebuild();
 render();
+// Pre-cargar fecha de pago hasta fin de 2026 si el usuario no tiene nada registrado aún
+if(!localStorage.getItem(PAY)) setPayDate("2026-12-31");
+renderPayCard();
 initSplash();
 checkBackupReminder(); // FIX #4
 </script>
