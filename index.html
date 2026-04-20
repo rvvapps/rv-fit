@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>Entrenamientos RV</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- FIX #10: user-scalable=no evita zoom accidental en tap rápido -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1">
 <meta name="theme-color" content="#2563eb">
 <link rel="manifest" href="/rv-fit/manifest.json">
-
 
 <link rel="preload" as="image" href="/rv-fit/splash.png" fetchpriority="high">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +15,6 @@
 
 <link rel="apple-touch-icon" sizes="180x180" href="/rv-fit/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="512x512" href="/rv-fit/icon-512.png">
-
 
 <style>
   html{background:#f8fafc;}
@@ -38,6 +37,7 @@ button.active{background:var(--primary);border-color:var(--primary);color:#fff}
 .day{height:64px;border:1px solid var(--border);border-radius:12px;text-align:center;position:relative;user-select:none;touch-action:manipulation;background:#fff}
 .day.weekend{background:var(--weekend)}
 .day.selected{outline:2px solid var(--primary)}
+.day.tap-flash{outline:2px solid rgba(37,99,235,.4)} /* FIX #6: feedback tap sin registro */
 .day.scheduled{background:var(--scheduled)}
 .day.done{background:var(--done);color:#fff}
 .day.done::after{content:"✔";position:absolute;top:4px;right:7px}
@@ -59,6 +59,10 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
 .quick-row strong{min-width:70px;text-align:right;color:#334155}
 .annual{display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:10px}
 .annual.show{display:block}
+/* FIX #7: nav de años en resumen anual */
+.annual-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.annual-nav span{font-weight:900;color:var(--primary);font-size:.85rem}
+.annual-nav button{padding:.25rem .5rem;font-size:.75rem}
 .annual-row{display:flex;gap:6px}
 .annual-month{flex:1;font-size:.62rem;text-align:center}
 .annual-bar{height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden;display:flex;margin:4px 0}
@@ -68,16 +72,21 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
 .toast.show{opacity:1}
 .dot{width:8px;height:8px;border-radius:999px;background:#ef4444;display:none;margin-left:6px}
 
-/* Aire entre calendario y barras */
+/* FIX #11: tarjeta de racha semanal */
+#streakCard{flex:1;border:1px solid var(--border);border-radius:14px;padding:10px;text-align:center;}
+#streakCard .streak-num{font-size:1.5rem;font-weight:900;color:var(--primary);line-height:1}
+#streakCard .streak-label{font-size:.65rem;color:#64748b;margin-top:2px}
+#streakCard .streak-fire{font-size:.85rem}
+
 #cal{
   margin-bottom: 18px;
 }
 
 #progressRow{
   margin-top: 14px;
+  align-items: stretch;
 }
 
-/* Separador sutil tipo iOS (opcional pero recomendado) */
 #progressRow::before{
   content:"";
   display:block;
@@ -86,9 +95,6 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
   margin: 0 6px 12px;
   border-radius: 999px;
 }
-
-
-
 
 /* =============================
    Splash in-app (sobrio + fluido)
@@ -128,7 +134,6 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
   margin:0 auto 10px;
   background: rgba(37,99,235,.10);
   border-radius: 18px;
-
 }
 
 #splashOverlay .splashTitle{
@@ -171,7 +176,6 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
   #splashOverlay, #splashOverlay .splashCard{ transition:none; }
   #splashOverlay .splashBar span{ animation:none; transform:none; width:60%; }
 }
-
 </style>
 </head>
 <body>
@@ -200,17 +204,31 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
   <div class="calendar" id="cal"></div>
 
   <div class="row" id="progressRow" style="display:none">
+    <!-- FIX #11: tarjeta de racha semanal -->
+    <div id="streakCard">
+      <div class="streak-fire">🔥</div>
+      <div class="streak-num" id="streakNum">0</div>
+      <div class="streak-label">semanas seguidas</div>
+    </div>
     <div class="card">
-      <div class="cardhead"><div style="font-weight:900">Semana actual</div><div id="weekMeta">0/0</div></div>
+      <div class="cardhead"><div style="font-weight:900">Semana</div><div id="weekMeta">0/0</div></div>
       <div class="bar"><div class="fill" id="weekFill"></div></div>
     </div>
     <div class="card">
-      <div class="cardhead"><div style="font-weight:900">Mes actual</div><div id="monthMeta">0/0</div></div>
+      <div class="cardhead"><div style="font-weight:900">Mes</div><div id="monthMeta">0/0</div></div>
       <div class="bar"><div class="fill" id="monthFill"></div></div>
     </div>
   </div>
 
-  <div class="annual" id="annual"></div>
+  <!-- FIX #7: resumen anual con navegación de años -->
+  <div class="annual" id="annual">
+    <div class="annual-nav">
+      <button id="annualPrev" type="button">◀</button>
+      <span id="annualYear"></span>
+      <button id="annualNext" type="button">▶</button>
+    </div>
+    <div id="annualContent"></div>
+  </div>
   <div class="center"><button id="annualBtn" type="button">📊 Mostrar resumen anual</button></div>
 
   <div class="actions">
@@ -286,21 +304,32 @@ const monthsShort=["E","F","M","A","M","J","J","A","S","O","N","D"];
 const $=s=>document.querySelector(s);
 const cal=$("#cal"), label=$("#label"), toast=$("#toast");
 const progressRow=$("#progressRow"), weekMeta=$("#weekMeta"), weekFill=$("#weekFill"), monthMeta=$("#monthMeta"), monthFill=$("#monthFill");
-const annual=$("#annual"), annualBtn=$("#annualBtn");
+const annual=$("#annual"), annualBtn=$("#annualBtn"), annualContent=$("#annualContent"), annualYear=$("#annualYear");
 const programPanel=$("#programPanel"), backupPanel=$("#backupPanel"), historyPanel=$("#historyPanel");
 const btnProgram=$("#btnProgram"), btnBackup=$("#btnBackup"), backupDot=$("#backupDot"), backupStatus=$("#backupStatus");
 const goNowWrap=$("#goNowWrap");
 const cleanRow=$("#cleanRow");
 
+// FIX #2: current siempre apunta al día 1 del mes para evitar bug de setMonth en días 29-31
 let current=new Date();
+current = new Date(current.getFullYear(), current.getMonth(), 1);
+
 let selected=null;
 let activePanel=null;
 let quickDays=new Set();
 let quickTime=null;
 let cleanMode=null;
 
+// FIX #7: año independiente para el resumen anual
+let annualViewYear=new Date().getFullYear();
+
 function pad2(n){return String(n).padStart(2,"0");}
-function dateKey(dt){return `${dt.getFullYear()}-${pad2(dt.getMonth()+1)}-${pad2(dt.getDate())}`;}
+
+// FIX #5: dateKey normaliza la hora antes de leer año/mes/día para evitar errores con DST
+function dateKey(dt){
+  const d=new Date(dt); d.setHours(0,0,0,0);
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+}
 function ymKey(y,m0){return `${y}-${pad2(m0+1)}`;}
 function keyToDate(k){const [y,m,d]=k.split("-").map(Number); const dt=new Date(y,m-1,d); dt.setHours(0,0,0,0); return dt;}
 function isISODate(k){return /^\d{4}-\d{2}-\d{2}$/.test(k);}
@@ -388,6 +417,9 @@ function startOfWeekMon(dt){
   return d;
 }
 
+// FIX #9: función centralizada para construir fechas de día
+function makeDay(y, m0, d){ const dt=new Date(y,m0,d); dt.setHours(0,0,0,0); return dt; }
+
 function setTimeForSelected(t){
   if(isPastMonth()) return;
   if(!selected) return toastMsg("Selecciona un día");
@@ -419,6 +451,30 @@ function delDay(key){
   applyDelta(key, prev, null);
   saveAll();
   return true;
+}
+
+// ====== FIX #11: cálculo de racha semanal ======
+// Una semana "cumplida" = al menos 1 entrenamiento marcado como done en esa semana.
+// Cuenta semanas consecutivas hacia atrás desde la semana actual.
+function calcStreak(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  let streak=0;
+  let weekStart=startOfWeekMon(today);
+
+  // máximo razonable de semanas a revisar (2 años)
+  for(let w=0; w<104; w++){
+    let hasDone=false;
+    for(let i=0;i<7;i++){
+      const dt=new Date(weekStart); dt.setDate(weekStart.getDate()+i);
+      if(dt>today) continue; // no contar días futuros
+      const k=dateKey(dt);
+      if(data[k]?.done){ hasDone=true; break; }
+    }
+    if(!hasDone) break;
+    streak++;
+    weekStart=new Date(weekStart); weekStart.setDate(weekStart.getDate()-7);
+  }
+  return streak;
 }
 
 // ====== Render (B) ======
@@ -453,7 +509,8 @@ function render(){
   const total=new Date(y,m0+1,0).getDate();
   for(let i=1;i<first;i++){ const e=document.createElement("div"); e.className="empty"; frag.appendChild(e); }
   for(let d=1; d<=total; d++){
-    const dt=new Date(y,m0,d); dt.setHours(0,0,0,0);
+    // FIX #9: uso de makeDay centralizado
+    const dt=makeDay(y,m0,d);
     const k=dateKey(dt);
     const cell=document.createElement("div");
     cell.className="day"; cell.dataset.key=k;
@@ -471,6 +528,7 @@ function render(){
   if(!past && cur){
     renderWeekBar();
     renderMonthBar();
+    renderStreak();
   }
   renderAnnualIfOpen();
   updateBackupUI();
@@ -494,10 +552,27 @@ function renderMonthBar(){
   monthMeta.textContent=`${s.done}/${s.plan}`;
   monthFill.style.width = s.plan ? Math.round(s.done/s.plan*100)+"%" : "0%";
 }
+
+// FIX #11: renderiza la racha
+function renderStreak(){
+  const s=calcStreak();
+  $("#streakNum").textContent=s;
+  // si racha >= 4 semanas, resaltar ligeramente
+  const card=$("#streakCard");
+  card.style.borderColor = s>=4 ? "var(--done)" : "var(--border)";
+}
+
+// FIX #7: renderAnnualIfOpen usa annualViewYear en vez del año de current
 function renderAnnualIfOpen(){
   if(!annual.classList.contains("show")) return;
-  annual.innerHTML="";
-  const y=current.getFullYear();
+  const y=annualViewYear;
+  annualYear.textContent=y;
+
+  // habilitar/deshabilitar botón siguiente si es año futuro
+  const thisYear=new Date().getFullYear();
+  $("#annualNext").disabled = (y >= thisYear);
+
+  annualContent.innerHTML="";
   const row=document.createElement("div"); row.className="annual-row";
   for(let m0=0;m0<12;m0++){
     const ym=ymKey(y,m0);
@@ -511,7 +586,7 @@ function renderAnnualIfOpen(){
       ${done}/${plan}`;
     row.appendChild(c);
   }
-  annual.appendChild(row);
+  annualContent.appendChild(row);
 }
 
 // ====== Panels ======
@@ -550,7 +625,7 @@ function updateBackupUI(){
   backupDot.style.display = show ? "inline-block" : "none";
 }
 function exportBackup(){
-  const payload={version:"3.0",exportedAt:new Date().toISOString(),data,history};
+  const payload={version:"3.1",exportedAt:new Date().toISOString(),data,history};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a"); a.href=url; a.download="rv-fit-backup.json"; document.body.appendChild(a); a.click(); a.remove();
@@ -580,7 +655,8 @@ function applyQuick(){
   const y=current.getFullYear(), m0=current.getMonth();
   const total=new Date(y,m0+1,0).getDate();
   for(let d=1; d<=total; d++){
-    const dt=new Date(y,m0,d); dt.setHours(0,0,0,0);
+    // FIX #9: uso de makeDay centralizado
+    const dt=makeDay(y,m0,d);
     if(quickDays.has(dt.getDay())){
       const k=dateKey(dt);
       if(!data[k]){
@@ -594,17 +670,20 @@ function applyQuick(){
 }
 
 // ====== Clean ======
+// FIX #3: confirmación en borrar semana y mes, no solo "todo"
 function setClean(m){cleanMode=m; ["cw","cm","ca"].forEach(id=>$("#"+id).classList.remove("active")); $("#"+(m==="week"?"cw":m==="month"?"cm":"ca")).classList.add("active");}
 function doClean(){
   if(isPastMonth()) return;
   if(!cleanMode) return toastMsg("Selecciona qué borrar");
   if(cleanMode==="all"){
-    if(!confirm("¿Borrar todo el calendario?")) return;
+    if(!confirm("¿Borrar todo el calendario? Esta acción no se puede deshacer.")) return;
     data={}; rebuild(); saveAll(); selected=null; toastMsg("Todo borrado"); render(); return;
   }
   if(!selected) return toastMsg("Selecciona un día");
   const base=keyToDate(selected);
   if(cleanMode==="week"){
+    // FIX #3: confirmación antes de borrar semana
+    if(!confirm("¿Borrar todos los días de esta semana?")) return;
     const ws=startOfWeekMon(base);
     for(let i=0;i<7;i++){
       const dt=new Date(ws); dt.setDate(ws.getDate()+i);
@@ -614,10 +693,13 @@ function doClean(){
     saveAll(); selected=null; toastMsg("Semana borrada"); render(); return;
   }
   if(cleanMode==="month"){
+    // FIX #3: confirmación antes de borrar mes
+    if(!confirm("¿Borrar todos los días de este mes?")) return;
     const y=base.getFullYear(), m0=base.getMonth();
     const total=new Date(y,m0+1,0).getDate();
     for(let d=1; d<=total; d++){
-      const dt=new Date(y,m0,d); dt.setHours(0,0,0,0);
+      // FIX #9: uso de makeDay centralizado
+      const dt=makeDay(y,m0,d);
       const k=dateKey(dt);
       if(data[k]){ const prev={...data[k]}; delete data[k]; applyDelta(k, prev, null); }
     }
@@ -645,7 +727,16 @@ function hit(ev){
 }
 function onTap(key){
   selected=key;
-  toggleDone(key);
+  const toggled=toggleDone(key);
+  // FIX #6: si el día no tiene registro (toggleDone retorna false), mostrar flash visual
+  if(!toggled && !isPastMonth()){
+    const cell=cal.querySelector(`[data-key="${key}"]`);
+    if(cell){
+      cell.classList.add("tap-flash");
+      setTimeout(()=>cell.classList.remove("tap-flash"), 300);
+    }
+    toastMsg("Primero programa este día con ⚙️");
+  }
   render();
 }
 function startPress(ev){
@@ -681,16 +772,39 @@ cal.addEventListener("mouseup", ()=>{clearTimeout(pressTimer); longTriggered=fal
 cal.addEventListener("mouseleave", ()=>{clearTimeout(pressTimer); longTriggered=false;});
 
 // ====== Wire UI ======
-$("#prev").addEventListener("click",()=>{current.setMonth(current.getMonth()-1); selected=null; closePanels(); render();});
-$("#next").addEventListener("click",()=>{current.setMonth(current.getMonth()+1); selected=null; closePanels(); render();});
-$("#goNow").addEventListener("click",()=>{current=new Date(); selected=null; closePanels(); render();});
+// FIX #2: usar new Date(y, m-1, 1) en lugar de setMonth() para evitar bug en días 29-31
+$("#prev").addEventListener("click",()=>{
+  current=new Date(current.getFullYear(), current.getMonth()-1, 1);
+  selected=null; closePanels(); render();
+});
+$("#next").addEventListener("click",()=>{
+  current=new Date(current.getFullYear(), current.getMonth()+1, 1);
+  selected=null; closePanels(); render();
+});
+$("#goNow").addEventListener("click",()=>{
+  current=new Date(); current=new Date(current.getFullYear(), current.getMonth(), 1);
+  selected=null; closePanels(); render();
+});
 btnProgram.addEventListener("click",()=>togglePanel("program"));
 btnBackup.addEventListener("click",()=>togglePanel("backup"));
 
 annualBtn.addEventListener("click",()=>{
   const open=annual.classList.toggle("show");
   annualBtn.textContent=open?"📊 Ocultar resumen anual":"📊 Mostrar resumen anual";
-  if(open) renderAnnualIfOpen();
+  if(open){
+    annualViewYear=current.getFullYear();
+    renderAnnualIfOpen();
+  }
+});
+
+// FIX #7: navegación de años en resumen anual
+$("#annualPrev").addEventListener("click",()=>{
+  annualViewYear--;
+  renderAnnualIfOpen();
+});
+$("#annualNext").addEventListener("click",()=>{
+  const thisYear=new Date().getFullYear();
+  if(annualViewYear<thisYear){ annualViewYear++; renderAnnualIfOpen(); }
 });
 
 $("#presetRow").addEventListener("click",(ev)=>{
@@ -740,13 +854,27 @@ $("#file").addEventListener("change", async (ev)=>{
   try{ await importBackup(f);}catch(e){console.error(e); toastMsg("Error al importar");}
 });
 
+// FIX #4: recordatorio de backup al abrir (una vez por día máximo)
+function checkBackupReminder(){
+  const meta=getMeta();
+  const d=daysSince(meta.lastBackup);
+  const lastReminder=meta.lastReminder;
+  const todayStr=new Date().toISOString().slice(0,10);
+  if(lastReminder===todayStr) return; // ya se mostró hoy
+  if(d===null || d>=30){
+    const msg=d===null?"💾 Recuerda hacer tu primer respaldo":"💾 Han pasado "+d+" días sin respaldo";
+    setTimeout(()=>toastMsg(msg), 1800); // después de que el splash termine
+    setMeta({...meta, lastReminder:todayStr});
+  }
+}
 
+// FIX #1: splash reducido a 400ms mínimo
 function initSplash(){
   const el = document.getElementById("splashOverlay");
   if(!el) return;
 
-const MIN_MS = 1500;  // mínimo visible (más “presencia”)
-const MAX_MS = 4000;  // seguridad
+  const MIN_MS = 400;  // FIX #1: reducido de 1500ms a 400ms
+  const MAX_MS = 3000;
 
   const start = Date.now();
   let hidden = false;
@@ -763,9 +891,7 @@ const MAX_MS = 4000;  // seguridad
     }, wait);
   };
 
-  // Cuando el primer render ya pintó
   requestAnimationFrame(() => requestAnimationFrame(hide));
-  // Failsafe
   setTimeout(hide, MAX_MS);
 }
 
@@ -774,6 +900,7 @@ migrate();
 rebuild();
 render();
 initSplash();
+checkBackupReminder(); // FIX #4
 </script>
 
 <script>
@@ -844,8 +971,6 @@ function showUpdateToast(reg, worker) {
     if (sw) sw.postMessage("SKIP_WAITING");
   });
 }
-
-
 </script>
 </body>
 </html>
