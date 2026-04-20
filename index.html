@@ -255,29 +255,6 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
     </div>
   </div>
 
-  <!-- Tarjeta de pago -->
-  <div id="payCard" class="pay-none" role="button" tabindex="0" aria-label="Estado de pago">
-    <div class="pay-left">
-      <div class="pay-label">💳 PAGO VIGENTE HASTA</div>
-      <div class="pay-date" id="payDateTxt">—</div>
-      <div class="pay-days" id="payDaysTxt"></div>
-    </div>
-    <div class="pay-edit">✏️ editar</div>
-  </div>
-  <div class="panel" id="payPanel">
-    <div class="pay-periods" id="payPeriods">
-      <button class="pay-period-btn" type="button" data-months="1">+1 mes</button>
-      <button class="pay-period-btn" type="button" data-months="3">+3 meses</button>
-      <button class="pay-period-btn" type="button" data-months="6">+6 meses</button>
-      <button class="pay-period-btn" type="button" data-months="12">+1 año</button>
-    </div>
-    <div class="pay-date-row">
-      <label for="payDateInput">Fecha exacta</label>
-      <input type="date" id="payDateInput">
-      <button id="payDateOk" type="button">OK</button>
-    </div>
-  </div>
-
   <!-- FIX #7: resumen anual con navegación de años -->
   <div class="annual" id="annual">
     <div class="annual-nav">
@@ -352,6 +329,30 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
         <input id="hDone" type="number" style="width:100%;box-sizing:border-box;text-align:center">
       </div>
       <button id="saveHist" type="button" style="height:36px;flex-shrink:0;white-space:nowrap">Guardar</button>
+    </div>
+  </div>
+
+  <!-- Tarjeta de pago — al final de todo -->
+  <div style="height:1px;background:rgba(60,60,67,.1);margin:12px 6px 0;border-radius:999px"></div>
+  <div id="payCard" class="pay-none" role="button" tabindex="0" aria-label="Estado de pago">
+    <div class="pay-left">
+      <div class="pay-label">💳 PAGO VIGENTE HASTA</div>
+      <div class="pay-date" id="payDateTxt">—</div>
+      <div class="pay-days" id="payDaysTxt"></div>
+    </div>
+    <div class="pay-edit">✏️ editar</div>
+  </div>
+  <div class="panel" id="payPanel">
+    <div class="pay-periods" id="payPeriods">
+      <button class="pay-period-btn" type="button" data-months="1">+1 mes</button>
+      <button class="pay-period-btn" type="button" data-months="3">+3 meses</button>
+      <button class="pay-period-btn" type="button" data-months="6">+6 meses</button>
+      <button class="pay-period-btn" type="button" data-months="12">+1 año</button>
+    </div>
+    <div class="pay-date-row">
+      <label for="payDateInput">Fecha exacta</label>
+      <input type="date" id="payDateInput">
+      <button id="payDateOk" type="button">OK</button>
     </div>
   </div>
 </div>
