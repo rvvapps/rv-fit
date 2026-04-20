@@ -284,10 +284,16 @@ input[type=time], input[type=number]{border:1px solid var(--border);border-radiu
   </div>
 
   <div class="panel" id="historyPanel">
-    <div class="row" style="align-items:center">
-      <div style="flex:1;text-align:center"><div style="font-weight:900;color:#334155">Programados</div><input id="hPlan" type="number"></div>
-      <div style="flex:1;text-align:center"><div style="font-weight:900;color:#334155">Reales</div><input id="hDone" type="number"></div>
-      <button id="saveHist" type="button" style="height:44px">Guardar</button>
+    <div style="display:flex;gap:10px;align-items:flex-end">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:900;color:#334155;font-size:.75rem;margin-bottom:4px;text-align:center">Programados</div>
+        <input id="hPlan" type="number" style="width:100%;box-sizing:border-box;text-align:center">
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:900;color:#334155;font-size:.75rem;margin-bottom:4px;text-align:center">Reales</div>
+        <input id="hDone" type="number" style="width:100%;box-sizing:border-box;text-align:center">
+      </div>
+      <button id="saveHist" type="button" style="height:36px;flex-shrink:0;white-space:nowrap">Guardar</button>
     </div>
   </div>
 </div>
