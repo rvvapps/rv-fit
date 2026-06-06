@@ -31,6 +31,7 @@ button:disabled{opacity:.45}
 button.active{background:var(--primary);border-color:var(--primary);color:#fff}
 .nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
 #label{font-weight:800;color:var(--primary);background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.18);padding:.25rem .6rem;border-radius:999px}
+#label.prev-editable{color:#b45309;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3)}
 .center{display:flex;justify-content:center;margin:10px 0}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .day-name{text-align:center;font-size:.7rem;font-weight:700;color:#334155}
@@ -486,7 +487,7 @@ function startOfWeekMon(dt){
 function makeDay(y, m0, d){ const dt=new Date(y,m0,d); dt.setHours(0,0,0,0); return dt; }
 
 function setTimeForSelected(t){
-  if(isPastMonth()) return;
+  if(!isEditableMonth()) return;
   if(!selected) return toastMsg("Selecciona un día");
   const prev=data[selected]?{...data[selected]}:null;
   const next={time:t, done:false};
@@ -495,8 +496,19 @@ function setTimeForSelected(t){
   saveAll();
   render();
 }
+function isEditableMonth(){
+  // Permite editar el mes actual y el mes anterior
+  const n=new Date();
+  const curY=current.getFullYear(), curM=current.getMonth();
+  const nowY=n.getFullYear(), nowM=n.getMonth();
+  if(curY===nowY && curM===nowM) return true; // mes actual
+  // mes anterior: exactamente 1 mes atrás
+  const prevDate=new Date(nowY, nowM-1, 1);
+  if(curY===prevDate.getFullYear() && curM===prevDate.getMonth()) return true;
+  return false;
+}
 function toggleDone(key){
-  if(isPastMonth()) return false;
+  if(!isEditableMonth()) return false;
   if(!data[key]) return false;
   const dt=keyToDate(key);
   const today=new Date(); today.setHours(0,0,0,0);
@@ -509,7 +521,7 @@ function toggleDone(key){
   return true;
 }
 function delDay(key){
-  if(isPastMonth()) return false;
+  if(!isEditableMonth()) return false;
   if(!data[key]) return false;
   const prev={...data[key]};
   delete data[key];
@@ -546,13 +558,21 @@ function calcStreak(){
 function render(){
   const y=current.getFullYear(), m0=current.getMonth();
   label.textContent = `${monthNames[m0]} ${y}`;
+  const editable=isEditableMonth(), isPrevMonth=isPastMonth()&&editable;
+  label.classList.toggle("prev-editable", isPrevMonth);
 
-  const past=isPastMonth(), cur=isCurrentMonth();
-  progressRow.style.display = (!past && cur) ? "flex" : "none";
+  const past=isPastMonth(), cur=isCurrentMonth(), editable2=isEditableMonth();
+  const isPrevMonth2 = past && editable2; // es el mes anterior (editable pero pasado)
+  progressRow.style.display = cur ? "flex" : "none";
   goNowWrap.style.display = cur ? "none" : "flex";
   historyPanel.classList.toggle("show", past);
-  btnProgram.disabled = past;
-  cleanRow.style.display = (!past && cur) ? "flex" : "none";
+  btnProgram.disabled = !editable2;
+  cleanRow.style.display = editable2 ? "flex" : "none";
+  if(isPrevMonth2){
+    label.title = "Mes anterior — edición permitida";
+  } else {
+    label.title = "";
+  }
 
   // history inputs
   if(past){
@@ -663,7 +683,7 @@ function closePanels(){
   btnBackup.classList.remove("active");
 }
 function togglePanel(which){
-  if(which==="program" && isPastMonth()) return;
+  if(which==="program" && !isEditableMonth()) return;
   if(activePanel===which){ closePanels(); return; }
   closePanels();
   activePanel=which;
@@ -714,7 +734,7 @@ async function importBackup(file){
 // ====== Quick ======
 function normTime(v){return (v||"").trim().slice(0,5);}
 function applyQuick(){
-  if(isPastMonth()) return;
+  if(!isEditableMonth()) return;
   if(!quickTime) return toastMsg("Elige una hora");
   if(!quickDays.size) return toastMsg("Elige días");
   const y=current.getFullYear(), m0=current.getMonth();
@@ -738,7 +758,7 @@ function applyQuick(){
 // FIX #3: confirmación en borrar semana y mes, no solo "todo"
 function setClean(m){cleanMode=m; ["cw","cm","ca"].forEach(id=>$("#"+id).classList.remove("active")); $("#"+(m==="week"?"cw":m==="month"?"cm":"ca")).classList.add("active");}
 function doClean(){
-  if(isPastMonth()) return;
+  if(!isEditableMonth()) return;
   if(!cleanMode) return toastMsg("Selecciona qué borrar");
   if(cleanMode==="all"){
     if(!confirm("¿Borrar todo el calendario? Esta acción no se puede deshacer.")) return;
@@ -792,9 +812,15 @@ function hit(ev){
 }
 function onTap(key){
   selected=key;
+  const editable=isEditableMonth();
+  if(!editable){
+    toastMsg("Solo puedes editar el mes actual y el anterior");
+    render();
+    return;
+  }
   const toggled=toggleDone(key);
   // FIX #6: si el día no tiene registro (toggleDone retorna false), mostrar flash visual
-  if(!toggled && !isPastMonth()){
+  if(!toggled){
     const cell=cal.querySelector(`[data-key="${key}"]`);
     if(cell){
       cell.classList.add("tap-flash");
@@ -806,7 +832,7 @@ function onTap(key){
 }
 function startPress(ev){
   const h=hit(ev); if(!h) return;
-  if(isPastMonth()) return;
+  if(!isEditableMonth()) return;
   longTriggered=false;
   clearTimeout(pressTimer);
   pressTimer=setTimeout(()=>{
